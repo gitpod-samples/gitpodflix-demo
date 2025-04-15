@@ -2,27 +2,20 @@ services:
   postgres:
     name: "PostgreSQL Database"
     description: "PostgreSQL database for Gitpod Flix"
-    triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
     commands:
       start: |
-        # Wait for any existing apt processes to complete
-        while fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
-          echo "Waiting for apt lock..."
-          sleep 5
-        done
-
-        # Install PostgreSQL client
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client
-
-        # Force cleanup of any existing PostgreSQL containers
-        echo "Cleaning up any existing PostgreSQL containers..."
-        docker rm -f postgres 2>/dev/null || true
-        sleep 5  # Give Docker time to clean up
-
-        echo "Starting PostgreSQL with Docker..."
+        # Install PostgreSQL client if not already installed
+        if ! command -v pg_isready &> /dev/null; then
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+        fi
+        
+        # Clean up any existing containers
+        docker stop postgres 2>/dev/null || true
+        docker rm postgres 2>/dev/null || true
+        
+        # Start PostgreSQL
+        cd database/main
         docker run --rm -d \
           --name postgres \
           -e POSTGRES_USER=gitpod \
@@ -30,81 +23,84 @@ services:
           -e POSTGRES_DB=gitpodflix \
           -p 5432:5432 \
           -v postgres_data:/var/lib/postgresql/data \
-          -v /workspaces/flex-demo/database/main/migrations:/docker-entrypoint-initdb.d \
+          -v $(pwd)/migrations:/docker-entrypoint-initdb.d \
           postgres:15
-
-        # Keep the service running and monitor the container
-        while true; do
-          if ! docker ps | grep -q postgres; then
-            echo "PostgreSQL container stopped unexpectedly"
-            exit 1
+        
+        # Wait for PostgreSQL to be ready
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5432 -U gitpod; then
+            echo "PostgreSQL is ready"
+            break
           fi
-          sleep 5
+          echo "Waiting for PostgreSQL to start... ($i/30)"
+          sleep 2
         done
       ready: |
         if ! command -v pg_isready &> /dev/null; then
-          sudo apt-get update && sudo apt-get install -y postgresql-client
+          echo "pg_isready not found, installing postgresql-client..."
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
         fi
-        if pg_isready -h localhost -p 5432 -U gitpod; then
-          echo "PostgreSQL is ready and accepting connections"
-          exit 0
-        else
-          echo "PostgreSQL not ready"
-          exit 1
-        fi
+        pg_isready -h localhost -p 5432 -U gitpod || exit 1
       stop: |
         docker stop postgres || true
         docker rm postgres || true
 
-  catalog:
+  catalog-service:
     name: "Catalog Service"
     description: "Movie catalog API service"
-    triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
     commands:
       start: |
-        cd /workspaces/flex-demo/backend/catalog
+        cd backend/catalog
         npm install
         PORT=3002 npm run dev
       ready: |
-        curl -s http://localhost:3002/health || echo "Catalog service not ready"
+        for i in {1..30}; do
+          if curl -s http://localhost:3002/health; then
+            exit 0
+          fi
+          sleep 2
+        done
+        exit 1
       stop: |
         pkill -f "node.*catalog" || true
 
   management-ui:
     name: "Management UI"
     description: "Development environment visualization dashboard"
-    triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
     commands:
       start: |
-        cd /workspaces/flex-demo/management-ui
+        cd management-ui
         npm install
         PORT=3001 npm run dev
       ready: |
-        curl -s http://localhost:3001 || echo "Management UI not ready"
+        for i in {1..30}; do
+          if curl -s http://localhost:3001; then
+            exit 0
+          fi
+          sleep 2
+        done
+        exit 1
       stop: |
         pkill -f "node.*management-ui" || true
 
   gitpod-flix:
     name: "Gitpod Flix"
     description: "Streaming platform frontend"
-    triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
     commands:
       start: |
-        cd /workspaces/flex-demo/frontend
-        if [ ! -d "/workspaces/flex-demo/frontend" ]; then
-          echo "Error: Frontend directory not found"
-          exit 1
-        fi
+        cd frontend
         npm install
         PORT=3000 npm run dev
       ready: |
-        curl -s http://localhost:3000 || echo "Gitpod Flix not ready"
+        for i in {1..30}; do
+          if curl -s http://localhost:3000; then
+            exit 0
+          fi
+          sleep 2
+        done
+        exit 1
       stop: |
         pkill -f "node.*frontend" || true
 
@@ -116,36 +112,29 @@ tasks:
       - postDevcontainerStart
     command: |
       echo "Installing management UI dependencies..."
-      cd /workspaces/flex-demo/management-ui && npm install
+      cd management-ui && npm install
       echo "Installing Gitpod Flix dependencies..."
-      cd /workspaces/flex-demo/frontend && npm install
+      cd ../frontend && npm install
       echo "Installing catalog service dependencies..."
-      cd /workspaces/flex-demo/backend/catalog && npm install
+      cd ../backend/catalog && npm install
 
   seedDatabase:
     name: "Seed Database"
-    description: "Seed the database with sample movies in a dramatic sequence"
+    description: "Seed the database with sample movies"
     triggeredBy:
       - manual
     command: |
-      cd /workspaces/flex-demo/database/main
+      # Install PostgreSQL client if not already installed
+      if ! command -v psql &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+      fi
+      
+      cd database/main
       echo "Clearing existing data..."
       PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
-
-      echo "Seeding trending movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/01_seed_trending.sql
-      sleep 4
-
-      echo "Seeding popular movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/02_seed_popular.sql
-      sleep 4
-
-      echo "Seeding classic movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/03_seed_classics.sql
-      sleep 4
-
-      echo "Seeding sci-fi movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/04_seed_scifi.sql
+      echo "Seeding movies..."
+      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/seed_movies.sql
       echo "Database seeding complete!"
 
   clearDatabase:
@@ -154,44 +143,11 @@ tasks:
     triggeredBy:
       - manual
     command: |
-      cd /workspaces/flex-demo/database/main
+      # Install PostgreSQL client if not already installed
+      if ! command -v psql &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+      fi
+      
+      cd database/main
       PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
-
-  # runTests:
-  #   name: "Run Tests"
-  #   description: "Run all test suites"
-  #   triggeredBy:
-  #     - manual
-  #   command: |
-  #     echo "Running management UI tests..."
-  #     cd /workspaces/flex-demo/management-ui && npm test
-  #     echo "Running Gitpod Flix tests..."
-  #     cd /workspaces/flex-demo/frontend && npm test
-  #     echo "Running catalog service tests..."
-  #     cd /workspaces/flex-demo/backend/catalog && npm test
-
-  # lint:
-  #   name: "Run Linters"
-  #   description: "Run all linters"
-  #   triggeredBy:
-  #     - manual
-  #   command: |
-  #     echo "Linting frontend..."
-  #     cd /workspaces/flex-demo/frontend && npm run lint
-  #     echo "Linting backend..."
-  #     cd /workspaces/flex-demo/services/backend && npm run lint
-  #     echo "Linting database service..."
-  #     cd /workspaces/flex-demo/services/database && npm run lint
-
-  # build:
-  #   name: "Build All"
-  #   description: "Build all services"
-  #   triggeredBy:
-  #     - manual
-  #   command: |
-  #     echo "Building frontend..."
-  #     cd /workspaces/flex-demo/frontend && npm run build
-  #     echo "Building backend..."
-  #     cd /workspaces/flex-demo/services/backend && npm run build
-  #     echo "Building database service..."
-  #     cd /workspaces/flex-demo/services/database && npm run build

@@ -1,49 +1,35 @@
 {
-  "name": "Streaming Platform Dev Environment",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "name": "GitpodFlix Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/devcontainers/features/docker-in-docker": {}
   },
-  "forwardPorts": [3000, 3001, 8000, 3306, 3002, 5432],
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y default-mysql-client default-mysql-server && sudo service mysql start && cd management-ui && npm install && cd ../frontend && npm install && cd ../services/backend && npm install && cd ../database && npm install && sudo apt-get install -y postgresql-client",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "mtxr.sqltools",
-        "mtxr.sqltools-driver-sqlite",
-        "mtxr.sqltools-driver-mysql",
-        "bradlc.vscode-tailwindcss"
-      ],
-      "settings": {
-        "editor.formatOnSave": true
-      }
-    }
-  },
+  "forwardPorts": [3000, 3001, 3002, 5432],
   "portsAttributes": {
     "3000": {
       "label": "Gitpod Flix",
       "onAutoForward": "openPreview"
     },
     "3001": {
-      "label": "Management UI"
-    },
-    "8000": {
-      "label": "Backend API"
-    },
-    "3306": {
-      "label": "Database Service"
+      "label": "Management UI",
+      "onAutoForward": "notify"
     },
     "3002": {
-      "label": "PostgreSQL Service"
+      "label": "Catalog API",
+      "onAutoForward": "notify"
     },
     "5432": {
-      "label": "PostgreSQL"
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
     }
   },
-  "remoteUser": "root"
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
 }
