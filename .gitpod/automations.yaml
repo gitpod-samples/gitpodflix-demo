@@ -67,7 +67,7 @@ services:
       - postEnvironmentStart
     commands:
       start: |
-                cd /workspaces/gitpodflix-demo/management-ui
+        cd /workspaces/gitpodflix-demo/management-ui
 
         # Wait for vite to be available
         echo "Waiting for vite to be available..."
@@ -104,7 +104,7 @@ services:
       - postEnvironmentStart
     commands:
       start: |
-                cd /workspaces/gitpodflix-demo/frontend
+        cd /workspaces/gitpodflix-demo/frontend
 
         # Wait for vite to be available
         echo "Waiting for vite to be available..."
@@ -141,7 +141,7 @@ tasks:
       - manual
       - postEnvironmentStart
     command: |
-            cd /workspaces/gitpodflix-demo/database/main
+      cd /workspaces/gitpodflix-demo/database/main
 
       # Wait for PostgreSQL to be ready
       echo "Waiting for PostgreSQL to be ready..."
