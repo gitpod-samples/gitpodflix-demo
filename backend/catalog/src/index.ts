@@ -18,13 +18,30 @@ const pool = new Pool({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://*.gitpod.io'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Routes
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Redirect /movies to /api/movies for backward compatibility
+app.get('/movies', (req, res) => {
+  res.redirect('/api/movies');
+});
+
 app.get('/api/movies', async (req, res) => {
+  console.log('API request received at /api/movies');
   try {
     const result = await pool.query('SELECT * FROM movies ORDER BY rating DESC');
+    console.log(`Returning ${result.rows.length} movies`);
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching movies:', err);
