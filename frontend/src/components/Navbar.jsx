@@ -5,7 +5,7 @@ function Navbar() {
     <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-black to-transparent p-4">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center space-x-8">
-          <h1 className="text-red-600 text-2xl font-bold">GITPOD FLIX</h1>
+          <h1 className="text-red-600 text-2xl font-bold">AVIVAFLIX</h1>
           <div className="hidden md:flex space-x-4">
             <a href="#" className="text-white hover:text-gray-300">Home</a>
             <a href="#" className="text-white hover:text-gray-300">TV Shows</a>
