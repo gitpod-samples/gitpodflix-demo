@@ -61,7 +61,12 @@ app.post('/api/movies/clear', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Catalog service running on port ${port}`);
-}); 
+// Only start the server if this file is run directly (not imported for testing)
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Catalog service running on port ${port}`);
+  });
+}
+
+// Export app for testing
+export default app;
