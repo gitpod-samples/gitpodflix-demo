@@ -36,7 +36,7 @@ function Home() {
       <Hero />
       <div className="mt-8 space-y-8">
         <MovieRow title="Trending Now" movies={movies.trending} />
-        <MovieRow title="Popular on Gitpod Flix" movies={movies.popular} />
+        <MovieRow title="Popular on Company Flix" movies={movies.popular} />
         <MovieRow title="Sci-Fi & Fantasy" movies={movies.scifi} />
       </div>
     </div>
