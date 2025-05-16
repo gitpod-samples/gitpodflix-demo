@@ -45,5 +45,20 @@ describe('Catalog API', () => {
       // Verify that the correct query was executed
       expect(pool.query).toHaveBeenCalledWith('SELECT * FROM movies ORDER BY rating DESC');
     });
+
+    it('should return 500 when database query fails', async () => {
+      // Mock a database error
+      const dbError = new Error('Database connection failed');
+      (pool.query as jest.Mock).mockRejectedValueOnce(dbError);
+      
+      // Make a request to the endpoint
+      const response = await request(app)
+        .get('/api/movies')
+        .expect('Content-Type', /json/)
+        .expect(500);
+      
+      // Verify the error response
+      expect(response.body).toEqual({ error: 'Internal server error' });
+    });
   });
 });
