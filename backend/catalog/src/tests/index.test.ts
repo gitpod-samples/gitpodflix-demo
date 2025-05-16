@@ -61,4 +61,39 @@ describe('Catalog API', () => {
       expect(response.body).toEqual({ error: 'Internal server error' });
     });
   });
+
+  describe('POST /api/movies/seed', () => {
+    it('should seed the database with initial movies', async () => {
+      // Mock successful database query
+      (pool.query as jest.Mock).mockResolvedValueOnce({});
+      
+      // Make a request to the endpoint
+      const response = await request(app)
+        .post('/api/movies/seed')
+        .expect('Content-Type', /json/)
+        .expect(200);
+      
+      // Verify the response
+      expect(response.body).toEqual({ message: 'Database seeded successfully' });
+      
+      // Verify that the query was called with the seed data
+      expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('TRUNCATE TABLE movies'));
+      expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO movies'));
+    });
+
+    it('should return 500 when database seeding fails', async () => {
+      // Mock a database error
+      const dbError = new Error('Database seeding failed');
+      (pool.query as jest.Mock).mockRejectedValueOnce(dbError);
+      
+      // Make a request to the endpoint
+      const response = await request(app)
+        .post('/api/movies/seed')
+        .expect('Content-Type', /json/)
+        .expect(500);
+      
+      // Verify the error response
+      expect(response.body).toEqual({ error: 'Internal server error' });
+    });
+  });
 });
