@@ -46,7 +46,7 @@ app.post('/api/movies/seed', async (req, res) => {
     `);
     res.json({ message: 'Database seeded successfully' });
   } catch (err) {
-    console.error('Error seeding database:', err);
+    console.error('Error seeding database:', err); 
     res.status(500).json({ error: 'Internal server error' });
   }
 });
