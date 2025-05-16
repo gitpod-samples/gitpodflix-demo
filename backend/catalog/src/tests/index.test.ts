@@ -96,4 +96,38 @@ describe('Catalog API', () => {
       expect(response.body).toEqual({ error: 'Internal server error' });
     });
   });
+
+  describe('POST /api/movies/clear', () => {
+    it('should clear all movies from the database', async () => {
+      // Mock successful database query
+      (pool.query as jest.Mock).mockResolvedValueOnce({});
+      
+      // Make a request to the endpoint
+      const response = await request(app)
+        .post('/api/movies/clear')
+        .expect('Content-Type', /json/)
+        .expect(200);
+      
+      // Verify the response
+      expect(response.body).toEqual({ message: 'Database cleared successfully' });
+      
+      // Verify that the query was called with the truncate command
+      expect(pool.query).toHaveBeenCalledWith('TRUNCATE TABLE movies');
+    });
+
+    it('should return 500 when database clearing fails', async () => {
+      // Mock a database error
+      const dbError = new Error('Database clearing failed');
+      (pool.query as jest.Mock).mockRejectedValueOnce(dbError);
+      
+      // Make a request to the endpoint
+      const response = await request(app)
+        .post('/api/movies/clear')
+        .expect('Content-Type', /json/)
+        .expect(500);
+      
+      // Verify the error response
+      expect(response.body).toEqual({ error: 'Internal server error' });
+    });
+  });
 });
