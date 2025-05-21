@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Database configuration
-const pool = new Pool({
+export const pool = new Pool({
   user: process.env.DB_USER || 'gitpod',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'gitpodflix',
@@ -61,7 +61,11 @@ app.post('/api/movies/clear', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Catalog service running on port ${port}`);
-}); 
+// Start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Catalog service running on port ${port}`);
+  });
+}
+
+export default app;
