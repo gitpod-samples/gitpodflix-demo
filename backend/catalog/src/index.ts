@@ -58,15 +58,37 @@ app.get('/api/games', async (req, res) => {
 app.get('/api/scores', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT player_name, COUNT(*) as score 
+      `SELECT 
+        player_name,
+        COUNT(*) FILTER (WHERE is_hit = true) as score,
+        COUNT(*) as total_guesses,
+        MAX(created_at) as last_guess
        FROM game_state 
-       WHERE is_hit = true 
        GROUP BY player_name 
-       ORDER BY score DESC`
+       ORDER BY score DESC, last_guess DESC`
     );
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching scores:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get scores for a specific game
+app.get('/api/scores/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const result = await pool.query(
+      `SELECT player_name, COUNT(*) as score 
+       FROM game_state 
+       WHERE game_id = $1 AND is_hit = true 
+       GROUP BY player_name 
+       ORDER BY score DESC`,
+      [gameId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching game scores:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

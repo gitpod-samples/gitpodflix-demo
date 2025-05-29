@@ -12,7 +12,7 @@ function GameBoard({ onGuess }) {
   );
   const [playerName, setPlayerName] = useState('');
   const [gameHistory, setGameHistory] = useState([]);
-  const [selectedGameId, setSelectedGameId] = useState(uuidv4());
+  const [selectedGameId, setSelectedGameId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sunkShips, setSunkShips] = useState([]);
@@ -24,7 +24,16 @@ function GameBoard({ onGuess }) {
     const loadGameHistory = async () => {
       try {
         const history = await fetchGameHistory();
-        setGameHistory(history);
+        // Ensure unique game IDs by using a Map
+        const uniqueHistory = Array.from(
+          new Map(history.map(game => [game.game_id, game])).values()
+        );
+        setGameHistory(uniqueHistory);
+        
+        // If no game is selected and we have history, select the most recent game
+        if (!selectedGameId && uniqueHistory.length > 0) {
+          setSelectedGameId(uniqueHistory[0].game_id);
+        }
       } catch (err) {
         setError('Failed to load game history');
         console.error(err);
@@ -43,22 +52,24 @@ function GameBoard({ onGuess }) {
       
       try {
         const gameState = await fetchGameState(selectedGameId);
-        if (!gameState) {
+        if (!gameState || gameState.length === 0) {
           // Initialize new game with ships
           const newShips = generateShipPositions();
           setShips(newShips);
+          setGameBoard(Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null)));
+          setSunkShips([]);
+          setIsGameOver(false);
+          setLastHit(null);
           return;
         }
         
         const newBoard = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
         
-        if (gameState.guesses) {
-          gameState.guesses.forEach(guess => {
-            if (guess && typeof guess.x === 'number' && typeof guess.y === 'number') {
-              newBoard[guess.y][guess.x] = guess.isHit ? 'hit' : 'miss';
-            }
-          });
-        }
+        gameState.forEach(guess => {
+          if (guess && typeof guess.x_coordinate === 'number' && typeof guess.y_coordinate === 'number') {
+            newBoard[guess.y_coordinate][guess.x_coordinate] = guess.is_hit ? 'hit' : 'miss';
+          }
+        });
         
         setGameBoard(newBoard);
         
@@ -71,12 +82,20 @@ function GameBoard({ onGuess }) {
         // Check for sunk ships
         if (ships) {
           const newSunkShips = ships.filter(ship => 
-            isShipSunk(ship, gameState.guesses || [])
+            isShipSunk(ship, gameState.map(guess => ({
+              x: guess.x_coordinate,
+              y: guess.y_coordinate,
+              isHit: guess.is_hit
+            })))
           );
           setSunkShips(newSunkShips);
           
           // Check for game over
-          const allShipsSunk = areAllShipsSunk(ships, gameState.guesses || []);
+          const allShipsSunk = areAllShipsSunk(ships, gameState.map(guess => ({
+            x: guess.x_coordinate,
+            y: guess.y_coordinate,
+            isHit: guess.is_hit
+          })));
           setIsGameOver(allShipsSunk);
         }
       } catch (err) {
@@ -211,16 +230,19 @@ function GameBoard({ onGuess }) {
       
       <div className="mb-4">
         <select
-          value={selectedGameId}
+          value={selectedGameId || ''}
           onChange={(e) => setSelectedGameId(e.target.value)}
           className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
           disabled={isGameOver}
         >
-          {gameHistory.filter(game => game && game.game_id).map((game) => (
-            <option key={game.game_id} value={game.game_id}>
-              Game {game.game_id.slice(0, 8)} - {game.game_timestamp ? new Date(game.game_timestamp).toLocaleString() : 'Unknown date'}
-            </option>
-          ))}
+          <option value="">Select a game</option>
+          {gameHistory
+            .filter(game => game && game.game_id)
+            .map((game, index) => (
+              <option key={`${game.game_id}-${index}`} value={game.game_id}>
+                Game {game.game_id.slice(0, 8)} - {game.game_timestamp ? new Date(game.game_timestamp).toLocaleString() : 'Unknown date'}
+              </option>
+            ))}
         </select>
       </div>
       
@@ -259,13 +281,13 @@ function GameBoard({ onGuess }) {
             <button
               key={`${x}-${y}`}
               onClick={() => handleCellClick(x, y)}
-              disabled={isLoading || cell !== null || isGameOver}
+              disabled={isLoading || cell !== null || isGameOver || !selectedGameId}
               className={`
                 w-8 h-8 border rounded transition-all duration-300
                 ${cell === 'hit' ? 'bg-red-500 scale-110' : ''}
                 ${cell === 'miss' ? 'bg-gray-300' : ''}
                 ${!cell ? 'bg-blue-100 hover:bg-blue-200 hover:scale-105' : ''}
-                ${(isLoading || isGameOver) ? 'opacity-50 cursor-not-allowed' : ''}
+                ${(isLoading || isGameOver || !selectedGameId) ? 'opacity-50 cursor-not-allowed' : ''}
                 ${lastHit && lastHit.x === x && lastHit.y === y ? 'animate-pulse' : ''}
               `}
             />

@@ -57,3 +57,11 @@ export const fetchAllScores = async () => {
   }
   return response.json();
 };
+
+export const fetchGameScores = async (gameId) => {
+  const response = await fetch(`${API_BASE_URL}/scores/${gameId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch game scores');
+  }
+  return response.json();
+};
