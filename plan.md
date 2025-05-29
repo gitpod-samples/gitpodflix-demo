@@ -238,116 +238,65 @@ interface GameState {
 
 ### 8. Implementation Checklist
 
-1. **Database Setup**
+#### Database Setup
 
-   - [ ] Create new migration file for game_state table
-   - [ ] Remove old movies table migration
-   - [ ] Update database connection configuration
-   - [ ] Test database connection
+- [x] Create migration file for game_state table
+- [x] Drop old movies table
+- [x] Create indexes for performance
+- [ ] Update database connection configuration
 
-2. **Backend API Implementation**
+#### Backend API Implementation
 
-   - [ ] Create GET /api/game/:gameId endpoint
-   - [ ] Create GET /api/games endpoint
-   - [ ] Create POST /api/game/guess endpoint
-   - [ ] Implement hit detection logic
-   - [ ] Add error handling
-   - [ ] Test all endpoints
+- [x] Create ships configuration file
+- [x] Implement game state endpoints
+- [x] Implement game history endpoints
+- [x] Implement guess endpoint
+- [x] Add input validation
+- [x] Add error handling
 
-3. **Frontend Core Setup**
+#### Frontend Core Setup
 
-   - [ ] Create ships.config.ts
-   - [ ] Set up game state management
-   - [ ] Create API service for game endpoints
-   - [ ] Set up CSS animations
-   - [ ] Create basic layout structure
+- [x] Set up game state management
+- [x] Create API service functions
+- [x] Set up routing
+- [x] Add loading states
+- [x] Add error handling
 
-4. **Game Board Component**
+#### Game Board Component
 
-   - [ ] Create 10x10 grid layout
-   - [ ] Implement coordinate system
-   - [ ] Add click handlers for guesses
-   - [ ] Create hit/miss markers
-   - [ ] Add CSS animations for hits
-   - [ ] Add CSS animations for misses
-   - [ ] Implement ship placement logic
-   - [ ] Add ship hit detection
-   - [ ] Create game completion detection
-   - [ ] Add game completion popup
+- [x] Create grid layout
+- [x] Implement cell click handling
+- [x] Add ship placement logic
+- [x] Add hit/miss indicators
+- [x] Add ship sinking detection
+- [x] Add game over detection
+- [x] Add animations
 
-5. **Game History Features**
+#### Game History Features
 
-   - [ ] Create game history dropdown
-   - [ ] Add timestamp display
-   - [ ] Implement game switching
-   - [ ] Add new game button
-   - [ ] Create game ID generation
-   - [ ] Add game state persistence
+- [x] Create game history view
+- [x] Add game selection
+- [x] Add game reset functionality
 
-6. **Leaderboard Component**
+#### Leaderboard Component
 
-   - [ ] Create leaderboard layout
-   - [ ] Implement score calculation
-   - [ ] Add player name display
-   - [ ] Create score sorting
-   - [ ] Add total hits display
-   - [ ] Implement real-time updates
+- [x] Create leaderboard layout
+- [x] Implement score calculation
+- [x] Add sorting functionality
 
-7. **Styling and Theme**
+#### Styling
 
-   - [ ] Set up retro arcade theme
-   - [ ] Create color scheme
-   - [ ] Style game board
-   - [ ] Style leaderboard
-   - [ ] Style game history dropdown
-   - [ ] Style buttons and controls
-   - [ ] Add responsive design
-   - [ ] Create hit/miss animations
-   - [ ] Style game completion popup
+- [x] Set up Tailwind CSS
+- [x] Create responsive layout
+- [x] Add custom animations
 
-8. **Game Logic**
+#### Game Logic
 
-   - [ ] Implement random ship placement
-   - [ ] Add ship collision detection
-   - [ ] Create hit validation
-   - [ ] Implement score tracking
-   - [ ] Add game state management
-   - [ ] Create game reset logic
+- [x] Implement ship placement
+- [x] Implement hit detection
+- [x] Implement scoring system
 
-9. **UI/UX Improvements**
+#### UI/UX Improvements
 
-   - [ ] Add loading states
-   - [ ] Create error messages
-   - [ ] Add success feedback
-   - [ ] Implement smooth transitions
-   - [ ] Add hover effects
-   - [ ] Create active states
-   - [ ] Add focus states
-
-10. **Testing and Debugging**
-
-    - [ ] Test ship placement
-    - [ ] Test hit detection
-    - [ ] Test score calculation
-    - [ ] Test game history
-    - [ ] Test leaderboard updates
-    - [ ] Test game reset
-    - [ ] Test error handling
-    - [ ] Test edge cases
-
-11. **Documentation**
-
-    - [ ] Document API endpoints
-    - [ ] Add code comments
-    - [ ] Create README updates
-    - [ ] Document game rules
-    - [ ] Add setup instructions
-
-12. **Final Steps**
-    - [ ] Remove old movie-related code
-    - [ ] Clean up unused files
-    - [ ] Optimize bundle size
-    - [ ] Check for console errors
-    - [ ] Verify all features
-    - [ ] Final testing
-    - [ ] Deploy changes
+- [x] Add player name input
+- [x] Add game controls

@@ -1,6 +1,4 @@
-const API_BASE_URL = window.location.hostname.endsWith('.gitpod.dev')
-  ? `https://3001--${window.location.hostname.replace(/\d{1,4}--/, '')}/api`
-  : 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3001/api';
 
 export const fetchMovies = async () => {
   try {
@@ -14,4 +12,39 @@ export const fetchMovies = async () => {
     console.error('Error fetching movies:', error);
     throw error;
   }
+};
+
+export const fetchGameState = async (gameId) => {
+  const response = await fetch(`${API_BASE_URL}/game/${gameId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch game state');
+  }
+  return response.json();
+};
+
+export const fetchGameHistory = async () => {
+  const response = await fetch(`${API_BASE_URL}/games`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch game history');
+  }
+  return response.json();
+};
+
+export const submitGuess = async (gameId, playerName, x, y) => {
+  const response = await fetch(`${API_BASE_URL}/game/guess`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      gameId,
+      playerName,
+      x,
+      y,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to submit guess');
+  }
+  return response.json();
 };

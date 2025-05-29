@@ -1,7 +1,7 @@
 services:
   postgres:
     name: "PostgreSQL Database"
-    description: "PostgreSQL database for Gitpod Flix (Port: 5432)"
+    description: "PostgreSQL database for Battleship Game (Port: 5432)"
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
@@ -24,13 +24,20 @@ services:
           postgres:15
 
       ready: |
-        if docker exec postgres pg_isready -U gitpod; then
-          echo "PostgreSQL is ready and accepting connections"
-          exit 0
-        else
+        # First check if PostgreSQL is accepting connections
+        if ! docker exec postgres pg_isready -U gitpod; then
           echo "PostgreSQL not ready"
           exit 1
         fi
+
+        # Then check if the game_state table exists
+        if ! docker exec postgres psql -U gitpod -d gitpodflix -c "SELECT 1 FROM game_state LIMIT 1" >/dev/null 2>&1; then
+          echo "Running migrations..."
+          docker exec postgres psql -U gitpod -d gitpodflix -f /docker-entrypoint-initdb.d/02_create_game_state.sql
+        fi
+
+        echo "PostgreSQL is ready and accepting connections"
+        exit 0
 
       stop: |
         echo "Stopping PostgreSQL container..."
@@ -39,8 +46,8 @@ services:
         docker rm -f postgres || true
 
   catalog:
-    name: "Catalog Service"
-    description: "Movie catalog API service (Port: 3001)"
+    name: "Game Server"
+    description: "Battleship game API service (Port: 3001)"
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
@@ -50,47 +57,31 @@ services:
         PORT=3001 npx nodemon src/index.ts
       ready: |
         if curl -s http://localhost:3001/health > /dev/null; then
-          echo "Catalog service is ready"
+          echo "Game server is ready"
           exit 0
         else
-          echo "Catalog service not ready"
+          echo "Game server not ready"
           exit 1
         fi
       stop: |
         pkill -f "node.*catalog" || true
 
-  gitpod-flix:
-    name: "Gitpod Flix"
-    description: "Streaming platform frontend (Port: 3000)"
+  frontend:
+    name: "Game Frontend"
+    description: "Battleship game frontend (Port: 3000)"
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
     commands:
       start: |
         cd /workspaces/gitpodflix-demo/frontend
-
-        # Wait for vite to be available
-        echo "Waiting for vite to be available..."
-        for i in {1..30}; do
-          if command -v vite >/dev/null 2>&1 || [ -f "node_modules/.bin/vite" ]; then
-            echo "✓ vite is available"
-            break
-          fi
-          if [ $i -eq 30 ]; then
-            echo "✗ Timeout waiting for vite"
-            exit 1
-          fi
-          echo "Waiting for vite... attempt $i/30"
-          sleep 2
-        done
-
         PORT=3000 npm run dev
       ready: |
         if curl -s http://localhost:3000 > /dev/null; then
-          echo "Gitpod Flix is ready"
+          echo "Frontend is ready"
           exit 0
         else
-          echo "Gitpod Flix not ready"
+          echo "Frontend not ready"
           exit 1
         fi
       stop: |
@@ -98,8 +89,8 @@ services:
 
 tasks:
   seedDatabase:
-    name: "Seed Database"
-    description: "Seed the database with sample movies in a dramatic sequence"
+    name: "Initialize Database"
+    description: "Initialize the database with the game_state table"
     triggeredBy:
       - manual
       - postEnvironmentStart
@@ -121,24 +112,9 @@ tasks:
         sleep 2
       done
 
-      echo "Clearing existing data..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
-
-      echo "Seeding trending movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/01_seed_trending.sql
-      sleep 4
-
-      echo "Seeding popular movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/02_seed_popular.sql
-      sleep 4
-
-      echo "Seeding classic movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/03_seed_classics.sql
-      sleep 4
-
-      echo "Seeding sci-fi movies..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/04_seed_scifi.sql
-      echo "Database seeding complete!"
+      echo "Initializing game_state table..."
+      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f migrations/02_create_game_state.sql
+      echo "Database initialization complete!"
 
   clearDatabase:
     name: "Clear Database"
@@ -147,7 +123,7 @@ tasks:
       - manual
     command: |
       cd /workspaces/gitpodflix-demo/database/main
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
+      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE game_state;"
 
   openDemoPorts:
     name: "Open Demo Ports"
@@ -157,8 +133,8 @@ tasks:
       - manual
     command: |
       echo "Opening demo ports..."
-      gitpod environment port open 3000 --name "Gitpod Flix"
-      gitpod environment port open 3001 --name "Catalog Service"
+      gitpod environment port open 3000 --name "Game Frontend"
+      gitpod environment port open 3001 --name "Game Server"
       echo "Demo ports opened successfully!"
 
   RMRF:
