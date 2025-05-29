@@ -275,24 +275,49 @@ function GameBoard({ onGuess }) {
         </div>
       )}
       
-      <div className="grid grid-cols-10 gap-1 mb-4">
-        {gameBoard.map((row, y) =>
-          row.map((cell, x) => (
-            <button
-              key={`${x}-${y}`}
-              onClick={() => handleCellClick(x, y)}
-              disabled={isLoading || cell !== null || isGameOver || !selectedGameId}
-              className={`
-                w-8 h-8 border rounded transition-all duration-300
-                ${cell === 'hit' ? 'bg-red-500 scale-110' : ''}
-                ${cell === 'miss' ? 'bg-gray-300' : ''}
-                ${!cell ? 'bg-blue-100 hover:bg-blue-200 hover:scale-105' : ''}
-                ${(isLoading || isGameOver || !selectedGameId) ? 'opacity-50 cursor-not-allowed' : ''}
-                ${lastHit && lastHit.x === x && lastHit.y === y ? 'animate-pulse' : ''}
-              `}
-            />
-          ))
-        )}
+      <div className="mb-4">
+        <div className="grid grid-rows-[auto_1fr]">
+          {/* Column headers and top-left empty cell */}
+          <div className="grid grid-cols-11 border-b border-gray-300">
+            <div className="w-8 h-8"></div>
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={`col-${i}`} className="h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-r border-gray-300 last:border-r-0">
+                {String.fromCharCode(65 + i)}
+              </div>
+            ))}
+          </div>
+          {/* Row numbers and main grid */}
+          <div className="grid grid-cols-11">
+            {Array.from({ length: 10 }, (_, y) => [
+              <div key={`row-label-${y}`} className="w-8 h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-b border-gray-300">
+                {y + 1}
+              </div>,
+              ...Array.from({ length: 10 }, (_, x) => (
+                <button
+                  key={`${x}-${y}`}
+                  onClick={() => handleCellClick(x, y)}
+                  disabled={isLoading || gameBoard[y][x] !== null || isGameOver || !selectedGameId}
+                  className={`
+                    h-8 border-r border-b border-gray-300 transition-all duration-300 relative overflow-hidden flex items-center justify-center
+                    ${gameBoard[y][x] === 'hit' ? 'bg-red-500' : ''}
+                    ${gameBoard[y][x] === 'miss' ? 'bg-gray-300' : ''}
+                    ${!gameBoard[y][x] ? 'bg-blue-100 hover:bg-blue-200' : ''}
+                    ${(isLoading || isGameOver || !selectedGameId) ? 'opacity-50 cursor-not-allowed' : ''}
+                    ${lastHit && lastHit.x === x && lastHit.y === y ? 'animate-pulse' : ''}
+                    ${x === 9 ? 'border-r-0' : ''}
+                    ${y === 9 ? 'border-b-0' : ''}
+                  `}
+                >
+                  {gameBoard[y][x] === 'hit' && (
+                    <div className="absolute inset-0 bg-red-500 transform scale-110" />
+                  )}
+                  {gameBoard[y][x] === 'hit' && <span className="relative z-10 text-lg">🔥</span>}
+                  {gameBoard[y][x] === 'miss' && <span className="text-lg">💦</span>}
+                </button>
+              ))
+            ]).flat()}
+          </div>
+        </div>
       </div>
       
       <button
