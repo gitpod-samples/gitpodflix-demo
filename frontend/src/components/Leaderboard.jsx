@@ -15,7 +15,21 @@ function Leaderboard({ currentGameState }) {
         const games = await fetchGameHistory();
         const playerScores = new Map();
 
-        // First, add the current game state if it exists
+        // Process all games, including the current one
+        for (const game of games) {
+          const gameState = await fetchGameState(game.id);
+          
+          if (gameState && gameState.guesses) {
+            gameState.guesses.forEach(guess => {
+              if (guess && guess.playerName) {
+                const currentScore = playerScores.get(guess.playerName) || 0;
+                playerScores.set(guess.playerName, currentScore + (guess.isHit ? 1 : 0));
+              }
+            });
+          }
+        }
+
+        // Add any current game state that hasn't been saved yet
         if (currentGameState && currentGameState.guesses) {
           currentGameState.guesses.forEach(guess => {
             if (guess && guess.playerName) {
@@ -23,21 +37,6 @@ function Leaderboard({ currentGameState }) {
               playerScores.set(guess.playerName, currentScore + (guess.isHit ? 1 : 0));
             }
           });
-        }
-
-        // Then add scores from previous games
-        for (const game of games) {
-          if (game.id === currentGameState?.id) continue; // Skip current game as we already processed it
-          
-          const gameState = await fetchGameState(game.id);
-          if (gameState && gameState.guesses) {
-            gameState.guesses.forEach(guess => {
-              if (guess && guess.isHit && guess.playerName) {
-                const currentScore = playerScores.get(guess.playerName) || 0;
-                playerScores.set(guess.playerName, currentScore + 1);
-              }
-            });
-          }
         }
 
         const sortedScores = Array.from(playerScores.entries())
@@ -58,7 +57,7 @@ function Leaderboard({ currentGameState }) {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Leaderboard</h2>
       
       {error && (
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
@@ -67,7 +66,7 @@ function Leaderboard({ currentGameState }) {
       )}
       
       {isLoading ? (
-        <div className="text-center py-4">Loading...</div>
+        <div className="text-center py-4 text-gray-600">Loading...</div>
       ) : (
         <div className="space-y-2">
           {scores.map((player, index) => (
@@ -76,10 +75,10 @@ function Leaderboard({ currentGameState }) {
               className="flex justify-between items-center p-2 bg-gray-50 rounded"
             >
               <div className="flex items-center">
-                <span className="font-bold mr-2">#{index + 1}</span>
-                <span>{player.name}</span>
+                <span className="font-bold mr-2 text-gray-800">#{index + 1}</span>
+                <span className="text-gray-700">{player.name}</span>
               </div>
-              <span className="font-bold">{player.score} hits</span>
+              <span className="font-bold text-gray-800">{player.score} hits</span>
             </div>
           ))}
           

@@ -176,12 +176,24 @@ function GameBoard({ onGuess }) {
   };
 
   const handleNewGame = () => {
-    setSelectedGameId(uuidv4());
+    const newGameId = uuidv4();
+    setSelectedGameId(newGameId);
     setGameBoard(Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null)));
     setSunkShips([]);
     setIsGameOver(false);
     setLastHit(null);
     setShips(generateShipPositions());
+    
+    // Update game history with proper structure
+    const newGame = {
+      game_id: newGameId,
+      game_timestamp: new Date().toISOString()
+    };
+    
+    setGameHistory(prevHistory => {
+      const filteredHistory = prevHistory.filter(game => game && game.game_id);
+      return [newGame, ...filteredHistory];
+    });
   };
 
   return (
@@ -192,7 +204,7 @@ function GameBoard({ onGuess }) {
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           placeholder="Enter your name"
-          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder-gray-400"
           disabled={isGameOver}
         />
       </div>
@@ -201,13 +213,12 @@ function GameBoard({ onGuess }) {
         <select
           value={selectedGameId}
           onChange={(e) => setSelectedGameId(e.target.value)}
-          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
           disabled={isGameOver}
         >
-          <option value={selectedGameId}>Current Game</option>
-          {gameHistory.filter(game => game && game.id).map((game) => (
-            <option key={game.id} value={game.id}>
-              Game {game.id.slice(0, 8)} - {game.created_at ? new Date(game.created_at).toLocaleString() : 'Unknown date'}
+          {gameHistory.filter(game => game && game.game_id).map((game) => (
+            <option key={game.game_id} value={game.game_id}>
+              Game {game.game_id.slice(0, 8)} - {game.game_timestamp ? new Date(game.game_timestamp).toLocaleString() : 'Unknown date'}
             </option>
           ))}
         </select>
@@ -221,7 +232,7 @@ function GameBoard({ onGuess }) {
       
       {sunkShips.length > 0 && (
         <div className="mb-4 animate-slide-in">
-          <h3 className="font-bold mb-2">Sunk Ships:</h3>
+          <h3 className="font-bold mb-2 text-gray-800">Sunk Ships:</h3>
           <div className="flex flex-wrap gap-2">
             {sunkShips.map((ship) => (
               <span

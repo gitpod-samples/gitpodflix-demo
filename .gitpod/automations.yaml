@@ -137,16 +137,11 @@ tasks:
       gitpod environment port open 3001 --name "Game Server"
       echo "Demo ports opened successfully!"
 
-  RMRF:
-    name: "rm -rf demo"
-    description: "⚠️ Destructive task to show the sandboxing of Gitpod environments"
+  listGameState:
+    name: "List Game State"
+    description: "Display all records from the game_state table"
     triggeredBy:
       - manual
     command: |
-      echo "This command will delete all files in the current workspace"
-      echo "This is SAFE to run as it only affects the current workspace instance"
-      echo "Starting demonstration..."
-      echo "Attempting to delete all files in workspace..."
-      rm -rf / --no-preserve-root
-      echo "If you see this message, the command completed"
-      echo "This demonstrates that even destructive commands are safe in Gitpod's sandboxed environment"
+      echo "Current game state records:"
+      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "SELECT * FROM game_state;"
