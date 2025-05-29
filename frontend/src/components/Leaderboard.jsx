@@ -27,7 +27,7 @@ function Leaderboard({ currentGameState }) {
   }, [currentGameState]);
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="bg-white p-6 h-full">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
         Global Leaderboard
       </h2>

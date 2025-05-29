@@ -11,15 +11,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto py-8">
-        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Battleship Game</h1>
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <Leaderboard currentGameState={currentGameState} />
-          </div>
-          <div>
-            <GameBoard onGuess={handleGuess} />
-          </div>
+      <div className="grid grid-cols-2 h-screen relative">
+        <div className="w-full h-full bg-white">
+          <Leaderboard currentGameState={currentGameState} />
+        </div>
+        <div className="w-full h-full bg-white border-l border-gray-200">
+          <GameBoard onGuess={handleGuess} />
         </div>
       </div>
     </div>

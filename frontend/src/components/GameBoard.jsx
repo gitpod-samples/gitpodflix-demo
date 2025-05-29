@@ -216,7 +216,7 @@ function GameBoard({ onGuess }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="bg-white p-6 h-full">
       <div className="mb-4">
         <input
           type="text"
