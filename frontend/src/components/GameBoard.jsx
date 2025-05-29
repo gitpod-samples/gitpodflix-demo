@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { fetchGameState, fetchGameHistory, submitGuess } from '../services/api';
 import { playSound } from '../utils/sounds';
 import { generateShipPositions, checkHit, isShipSunk, areAllShipsSunk } from '../utils/gameLogic';
+import { SHIPS } from '../config/ships';
 
 const GRID_SIZE = 10;
 
@@ -19,6 +20,9 @@ function GameBoard({ onGuess }) {
   const [isGameOver, setIsGameOver] = useState(false);
   const [lastHit, setLastHit] = useState(null);
   const [ships, setShips] = useState(null);
+  const [shipStatus, setShipStatus] = useState(() => 
+    SHIPS.map(ship => ({ ...ship, isSunk: false }))
+  );
 
   useEffect(() => {
     const loadGameHistory = async () => {
@@ -60,6 +64,7 @@ function GameBoard({ onGuess }) {
           setSunkShips([]);
           setIsGameOver(false);
           setLastHit(null);
+          setShipStatus(SHIPS.map(ship => ({ ...ship, isSunk: false })));
           return;
         }
         
@@ -89,6 +94,14 @@ function GameBoard({ onGuess }) {
             })))
           );
           setSunkShips(newSunkShips);
+          
+          // Update ship status
+          setShipStatus(prevStatus => 
+            prevStatus.map(ship => ({
+              ...ship,
+              isSunk: newSunkShips.some(sunkShip => sunkShip.name === ship.name)
+            }))
+          );
           
           // Check for game over
           const allShipsSunk = areAllShipsSunk(ships, gameState.map(guess => ({
@@ -132,13 +145,32 @@ function GameBoard({ onGuess }) {
         playSound('hit');
         setLastHit({ x, y });
         
+        // Get all current hits including the new one
+        const allHits = [
+          ...gameBoard.flat().map((cell, index) => {
+            if (cell === 'hit') {
+              return {
+                x: index % 10,
+                y: Math.floor(index / 10),
+                isHit: true
+              };
+            }
+            return null;
+          }).filter(Boolean),
+          { x, y, isHit: true }
+        ];
+        
         // Check if any ship was sunk
         const newSunkShips = ships.filter(ship =>
-          isShipSunk(ship, [...gameBoard.flat().filter(cell => cell === 'hit').map((_, index) => ({
-            x: index % 10,
-            y: Math.floor(index / 10),
-            isHit: true
-          })), { x, y, isHit: true }])
+          isShipSunk(ship, allHits)
+        );
+        
+        // Update ship status
+        setShipStatus(prevStatus => 
+          prevStatus.map(ship => ({
+            ...ship,
+            isSunk: newSunkShips.some(sunkShip => sunkShip.name === ship.name)
+          }))
         );
         
         // If there are new sunk ships, play the ship sunk sound
@@ -149,11 +181,7 @@ function GameBoard({ onGuess }) {
         setSunkShips(newSunkShips);
         
         // Check if game is over
-        const allShipsSunk = areAllShipsSunk(ships, [...gameBoard.flat().filter(cell => cell === 'hit').map((_, index) => ({
-          x: index % 10,
-          y: Math.floor(index / 10),
-          isHit: true
-        })), { x, y, isHit: true }]);
+        const allShipsSunk = areAllShipsSunk(ships, allHits);
         
         if (allShipsSunk) {
           playSound('gameOver');
@@ -202,6 +230,7 @@ function GameBoard({ onGuess }) {
     setIsGameOver(false);
     setLastHit(null);
     setShips(generateShipPositions());
+    setShipStatus(SHIPS.map(ship => ({ ...ship, isSunk: false })));
     
     // Update game history with proper structure
     const newGame = {
@@ -252,21 +281,23 @@ function GameBoard({ onGuess }) {
         </div>
       )}
       
-      {sunkShips.length > 0 && (
-        <div className="mb-4 animate-slide-in">
-          <h3 className="font-bold mb-2 text-gray-800">Sunk Ships:</h3>
-          <div className="flex flex-wrap gap-2">
-            {sunkShips.map((ship) => (
-              <span
-                key={ship.name}
-                className="px-2 py-1 bg-red-100 text-red-800 rounded animate-bounce"
-              >
-                {ship.name}
-              </span>
-            ))}
-          </div>
+      <div className="mb-4">
+        <h3 className="font-bold mb-2 text-gray-800">Ships:</h3>
+        <div className="flex flex-wrap gap-2">
+          {shipStatus.map((ship) => (
+            <span
+              key={ship.name}
+              className={`px-2 py-1 rounded transition-all duration-300 ${
+                ship.isSunk 
+                  ? 'bg-red-100 text-red-800 animate-bounce' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}
+            >
+              {ship.name} ({ship.size})
+            </span>
+          ))}
         </div>
-      )}
+      </div>
       
       {isGameOver && (
         <div className="mb-4 p-4 bg-green-100 text-green-800 rounded text-center animate-scale-in">
@@ -287,35 +318,37 @@ function GameBoard({ onGuess }) {
             ))}
           </div>
           {/* Row numbers and main grid */}
-          <div className="grid grid-cols-11">
-            {Array.from({ length: 10 }, (_, y) => [
-              <div key={`row-label-${y}`} className="w-8 h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-b border-gray-300">
-                {y + 1}
-              </div>,
-              ...Array.from({ length: 10 }, (_, x) => (
-                <button
-                  key={`${x}-${y}`}
-                  onClick={() => handleCellClick(x, y)}
-                  disabled={isLoading || gameBoard[y][x] !== null || isGameOver || !selectedGameId}
-                  className={`
-                    h-8 border-r border-b border-gray-300 transition-all duration-300 relative overflow-hidden flex items-center justify-center
-                    ${gameBoard[y][x] === 'hit' ? 'bg-red-500' : ''}
-                    ${gameBoard[y][x] === 'miss' ? 'bg-gray-300' : ''}
-                    ${!gameBoard[y][x] ? 'bg-blue-100 hover:bg-blue-200' : ''}
-                    ${(isLoading || isGameOver || !selectedGameId) ? 'opacity-50 cursor-not-allowed' : ''}
-                    ${lastHit && lastHit.x === x && lastHit.y === y ? 'animate-pulse' : ''}
-                    ${x === 9 ? 'border-r-0' : ''}
-                    ${y === 9 ? 'border-b-0' : ''}
-                  `}
-                >
-                  {gameBoard[y][x] === 'hit' && (
-                    <div className="absolute inset-0 bg-red-500 transform scale-110" />
-                  )}
-                  {gameBoard[y][x] === 'hit' && <span className="relative z-10 text-lg">🔥</span>}
-                  {gameBoard[y][x] === 'miss' && <span className="text-lg">💦</span>}
-                </button>
-              ))
-            ]).flat()}
+          <div>
+            {Array.from({ length: 10 }, (_, y) => (
+              <div key={`row-${y}`} className="grid grid-cols-11">
+                <div className="w-8 h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-b border-gray-300">
+                  {y + 1}
+                </div>
+                {Array.from({ length: 10 }, (_, x) => (
+                  <button
+                    key={`${x}-${y}`}
+                    onClick={() => handleCellClick(x, y)}
+                    disabled={isLoading || gameBoard[y][x] !== null || isGameOver || !selectedGameId}
+                    className={`
+                      h-8 border-r border-b border-gray-300 transition-all duration-300 relative overflow-hidden flex items-center justify-center
+                      ${gameBoard[y][x] === 'hit' ? 'bg-red-500' : ''}
+                      ${gameBoard[y][x] === 'miss' ? 'bg-gray-300' : ''}
+                      ${!gameBoard[y][x] ? 'bg-blue-100 hover:bg-blue-200' : ''}
+                      ${(isLoading || isGameOver || !selectedGameId) ? 'opacity-50 cursor-not-allowed' : ''}
+                      ${lastHit && lastHit.x === x && lastHit.y === y ? 'animate-pulse' : ''}
+                      ${x === 9 ? 'border-r-0' : ''}
+                      ${y === 9 ? 'border-b-0' : ''}
+                    `}
+                  >
+                    {gameBoard[y][x] === 'hit' && (
+                      <div className="absolute inset-0 bg-red-500 transform scale-110" />
+                    )}
+                    {gameBoard[y][x] === 'hit' && <span className="relative z-10 text-lg">🔥</span>}
+                    {gameBoard[y][x] === 'miss' && <span className="text-lg">💦</span>}
+                  </button>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       </div>
