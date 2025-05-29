@@ -3,12 +3,10 @@ import GameBoard from './components/GameBoard';
 import Leaderboard from './components/Leaderboard';
 
 function App() {
-  const [score, setScore] = useState(0);
+  const [currentGameState, setCurrentGameState] = useState(null);
 
-  const handleGuess = (isHit) => {
-    if (isHit) {
-      setScore(prev => prev + 1);
-    }
+  const handleGuess = (gameState) => {
+    setCurrentGameState(gameState);
   };
 
   return (
@@ -17,7 +15,7 @@ function App() {
         <h1 className="text-4xl font-bold text-center mb-8">Battleship Game</h1>
         <div className="grid grid-cols-2 gap-8">
           <div>
-            <Leaderboard />
+            <Leaderboard currentGameState={currentGameState} />
           </div>
           <div>
             <GameBoard onGuess={handleGuess} />

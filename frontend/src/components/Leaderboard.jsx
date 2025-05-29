@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchGameHistory, fetchGameState } from '../services/api';
 
-function Leaderboard() {
+function Leaderboard({ currentGameState }) {
   const [scores, setScores] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,9 +15,21 @@ function Leaderboard() {
         const games = await fetchGameHistory();
         const playerScores = new Map();
 
+        // First, add the current game state if it exists
+        if (currentGameState && currentGameState.guesses) {
+          currentGameState.guesses.forEach(guess => {
+            if (guess && guess.playerName) {
+              const currentScore = playerScores.get(guess.playerName) || 0;
+              playerScores.set(guess.playerName, currentScore + (guess.isHit ? 1 : 0));
+            }
+          });
+        }
+
+        // Then add scores from previous games
         for (const game of games) {
-          const gameState = await fetchGameState(game.id);
+          if (game.id === currentGameState?.id) continue; // Skip current game as we already processed it
           
+          const gameState = await fetchGameState(game.id);
           if (gameState && gameState.guesses) {
             gameState.guesses.forEach(guess => {
               if (guess && guess.isHit && guess.playerName) {
@@ -42,7 +54,7 @@ function Leaderboard() {
     };
 
     loadScores();
-  }, []);
+  }, [currentGameState]); // Re-run when currentGameState changes
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">

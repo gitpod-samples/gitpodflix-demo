@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchGameState, fetchGameHistory, submitGuess } from '../services/api';
 import { playSound } from '../utils/sounds';
+import { generateShipPositions, checkHit, isShipSunk, areAllShipsSunk } from '../utils/gameLogic';
 
 const GRID_SIZE = 10;
 
@@ -17,6 +18,7 @@ function GameBoard({ onGuess }) {
   const [sunkShips, setSunkShips] = useState([]);
   const [isGameOver, setIsGameOver] = useState(false);
   const [lastHit, setLastHit] = useState(null);
+  const [ships, setShips] = useState(null);
 
   useEffect(() => {
     const loadGameHistory = async () => {
@@ -42,7 +44,10 @@ function GameBoard({ onGuess }) {
       try {
         const gameState = await fetchGameState(selectedGameId);
         if (!gameState) {
-          throw new Error('No game state received');
+          // Initialize new game with ships
+          const newShips = generateShipPositions();
+          setShips(newShips);
+          return;
         }
         
         const newBoard = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
@@ -57,25 +62,21 @@ function GameBoard({ onGuess }) {
         
         setGameBoard(newBoard);
         
+        // Initialize ships if not already set
+        if (!ships) {
+          const newShips = generateShipPositions();
+          setShips(newShips);
+        }
+        
         // Check for sunk ships
-        if (gameState.ships) {
-          const newSunkShips = gameState.ships.filter(ship => 
-            ship.positions.every(pos => 
-              gameState.guesses.some(guess => 
-                guess.x === pos.x && guess.y === pos.y && guess.isHit
-              )
-            )
+        if (ships) {
+          const newSunkShips = ships.filter(ship => 
+            isShipSunk(ship, gameState.guesses || [])
           );
           setSunkShips(newSunkShips);
           
           // Check for game over
-          const allShipsSunk = gameState.ships.every(ship =>
-            ship.positions.every(pos =>
-              gameState.guesses.some(guess =>
-                guess.x === pos.x && guess.y === pos.y && guess.isHit
-              )
-            )
-          );
+          const allShipsSunk = areAllShipsSunk(ships, gameState.guesses || []);
           setIsGameOver(allShipsSunk);
         }
       } catch (err) {
@@ -90,29 +91,35 @@ function GameBoard({ onGuess }) {
   }, [selectedGameId]);
 
   const handleCellClick = async (x, y) => {
-    if (!playerName || isLoading || isGameOver) return;
+    if (!playerName || isLoading || isGameOver || !ships) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const result = await submitGuess(selectedGameId, playerName, x, y);
+      // Check if it's a hit on the client side
+      const isHit = checkHit(ships, x, y);
+      
+      // Store the guess in the database
+      await submitGuess(selectedGameId, playerName, x, y, isHit);
+      
+      // Update the board
       const newBoard = [...gameBoard];
-      newBoard[y][x] = result.isHit ? 'hit' : 'miss';
+      newBoard[y][x] = isHit ? 'hit' : 'miss';
       setGameBoard(newBoard);
       
       // Play appropriate sound
-      if (result.isHit) {
+      if (isHit) {
         playSound('hit');
         setLastHit({ x, y });
         
         // Check if any ship was sunk
-        const newSunkShips = result.ships.filter(ship =>
-          ship.positions.every(pos =>
-            result.guesses.some(guess =>
-              guess.x === pos.x && guess.y === pos.y && guess.isHit
-            )
-          )
+        const newSunkShips = ships.filter(ship =>
+          isShipSunk(ship, [...gameBoard.flat().filter(cell => cell === 'hit').map((_, index) => ({
+            x: index % 10,
+            y: Math.floor(index / 10),
+            isHit: true
+          })), { x, y, isHit: true }])
         );
         
         // If there are new sunk ships, play the ship sunk sound
@@ -123,13 +130,11 @@ function GameBoard({ onGuess }) {
         setSunkShips(newSunkShips);
         
         // Check if game is over
-        const allShipsSunk = result.ships.every(ship =>
-          ship.positions.every(pos =>
-            result.guesses.some(guess =>
-              guess.x === pos.x && guess.y === pos.y && guess.isHit
-            )
-          )
-        );
+        const allShipsSunk = areAllShipsSunk(ships, [...gameBoard.flat().filter(cell => cell === 'hit').map((_, index) => ({
+          x: index % 10,
+          y: Math.floor(index / 10),
+          isHit: true
+        })), { x, y, isHit: true }]);
         
         if (allShipsSunk) {
           playSound('gameOver');
@@ -140,8 +145,27 @@ function GameBoard({ onGuess }) {
         playSound('miss');
       }
       
+      // Create the current game state object
+      const currentState = {
+        id: selectedGameId,
+        guesses: [
+          ...gameBoard.flat().map((cell, index) => {
+            if (cell === 'hit' || cell === 'miss') {
+              return {
+                x: index % 10,
+                y: Math.floor(index / 10),
+                isHit: cell === 'hit',
+                playerName: playerName
+              };
+            }
+            return null;
+          }).filter(Boolean),
+          { x, y, isHit, playerName }
+        ]
+      };
+      
       if (onGuess) {
-        onGuess(result.isHit);
+        onGuess(currentState);
       }
     } catch (err) {
       setError('Failed to submit guess');
@@ -153,10 +177,11 @@ function GameBoard({ onGuess }) {
 
   const handleNewGame = () => {
     setSelectedGameId(uuidv4());
-    setGameBoard(Array(GRID_SIZE).fill(Array(GRID_SIZE).fill(null)));
+    setGameBoard(Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null)));
     setSunkShips([]);
     setIsGameOver(false);
     setLastHit(null);
+    setShips(generateShipPositions());
   };
 
   return (

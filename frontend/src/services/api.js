@@ -30,7 +30,7 @@ export const fetchGameHistory = async () => {
   return response.json();
 };
 
-export const submitGuess = async (gameId, playerName, x, y) => {
+export const submitGuess = async (gameId, playerName, x, y, isHit) => {
   const response = await fetch(`${API_BASE_URL}/game/guess`, {
     method: 'POST',
     headers: {
@@ -41,6 +41,7 @@ export const submitGuess = async (gameId, playerName, x, y) => {
       playerName,
       x,
       y,
+      isHit,
     }),
   });
   if (!response.ok) {
