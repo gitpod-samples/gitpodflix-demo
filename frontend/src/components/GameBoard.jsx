@@ -310,9 +310,9 @@ function GameBoard({ onGuess }) {
         <div className="grid grid-rows-[auto_1fr]">
           {/* Column headers and top-left empty cell */}
           <div className="grid grid-cols-11 border-b border-gray-300">
-            <div className="w-8 h-8"></div>
+            <div className="w-10 h-10"></div>
             {Array.from({ length: 10 }, (_, i) => (
-              <div key={`col-${i}`} className="h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-r border-gray-300 last:border-r-0">
+              <div key={`col-${i}`} className="w-10 h-10 flex items-center justify-center text-sm font-medium text-gray-600 border-r border-gray-300 last:border-r-0">
                 {String.fromCharCode(65 + i)}
               </div>
             ))}
@@ -321,7 +321,7 @@ function GameBoard({ onGuess }) {
           <div>
             {Array.from({ length: 10 }, (_, y) => (
               <div key={`row-${y}`} className="grid grid-cols-11">
-                <div className="w-8 h-8 flex items-center justify-center text-sm font-medium text-gray-600 border-b border-gray-300">
+                <div className="w-10 h-10 flex items-center justify-center text-sm font-medium text-gray-600 border-b border-gray-300">
                   {y + 1}
                 </div>
                 {Array.from({ length: 10 }, (_, x) => (
@@ -330,7 +330,7 @@ function GameBoard({ onGuess }) {
                     onClick={() => handleCellClick(x, y)}
                     disabled={isLoading || gameBoard[y][x] !== null || isGameOver || !selectedGameId}
                     className={`
-                      h-8 border-r border-b border-gray-300 transition-all duration-300 relative overflow-hidden flex items-center justify-center
+                      w-full h-full border-r border-b border-gray-300 transition-all duration-300 relative overflow-hidden flex items-center justify-center
                       ${gameBoard[y][x] === 'hit' ? 'bg-red-500' : ''}
                       ${gameBoard[y][x] === 'miss' ? 'bg-gray-300' : ''}
                       ${!gameBoard[y][x] ? 'bg-blue-100 hover:bg-blue-200' : ''}

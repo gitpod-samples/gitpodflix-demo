@@ -11,11 +11,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="grid grid-cols-2 h-screen relative">
+      <div className="grid grid-cols-4 h-screen relative">
         <div className="w-full h-full bg-white">
           <Leaderboard currentGameState={currentGameState} />
         </div>
-        <div className="w-full h-full bg-white border-l border-gray-200">
+        <div className="w-full h-full bg-white border-l border-gray-200 col-span-3">
           <GameBoard onGuess={handleGuess} />
         </div>
       </div>
