@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchGameHistory, fetchGameState } from '../services/api';
+import { fetchAllScores } from '../services/api';
 
 function Leaderboard({ currentGameState }) {
   const [scores, setScores] = useState([]);
@@ -12,38 +12,8 @@ function Leaderboard({ currentGameState }) {
       setError(null);
 
       try {
-        const games = await fetchGameHistory();
-        const playerScores = new Map();
-
-        // Process all games, including the current one
-        for (const game of games) {
-          const gameState = await fetchGameState(game.id);
-          
-          if (gameState && gameState.guesses) {
-            gameState.guesses.forEach(guess => {
-              if (guess && guess.playerName) {
-                const currentScore = playerScores.get(guess.playerName) || 0;
-                playerScores.set(guess.playerName, currentScore + (guess.isHit ? 1 : 0));
-              }
-            });
-          }
-        }
-
-        // Add any current game state that hasn't been saved yet
-        if (currentGameState && currentGameState.guesses) {
-          currentGameState.guesses.forEach(guess => {
-            if (guess && guess.playerName) {
-              const currentScore = playerScores.get(guess.playerName) || 0;
-              playerScores.set(guess.playerName, currentScore + (guess.isHit ? 1 : 0));
-            }
-          });
-        }
-
-        const sortedScores = Array.from(playerScores.entries())
-          .map(([name, score]) => ({ name, score }))
-          .sort((a, b) => b.score - a.score);
-
-        setScores(sortedScores);
+        const allScores = await fetchAllScores();
+        setScores(allScores);
       } catch (err) {
         setError('Failed to load leaderboard');
         console.error(err);
@@ -53,7 +23,7 @@ function Leaderboard({ currentGameState }) {
     };
 
     loadScores();
-  }, [currentGameState]); // Re-run when currentGameState changes
+  }, [currentGameState]); // Still re-run when currentGameState changes to show latest scores
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -71,12 +41,12 @@ function Leaderboard({ currentGameState }) {
         <div className="space-y-2">
           {scores.map((player, index) => (
             <div
-              key={player.name}
+              key={player.player_name}
               className="flex justify-between items-center p-2 bg-gray-50 rounded"
             >
               <div className="flex items-center">
                 <span className="font-bold mr-2 text-gray-800">#{index + 1}</span>
-                <span className="text-gray-700">{player.name}</span>
+                <span className="text-gray-700">{player.player_name}</span>
               </div>
               <span className="font-bold text-gray-800">{player.score} hits</span>
             </div>

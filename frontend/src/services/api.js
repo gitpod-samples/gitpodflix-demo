@@ -49,3 +49,11 @@ export const submitGuess = async (gameId, playerName, x, y, isHit) => {
   }
   return response.json();
 };
+
+export const fetchAllScores = async () => {
+  const response = await fetch(`${API_BASE_URL}/scores`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch scores');
+  }
+  return response.json();
+};

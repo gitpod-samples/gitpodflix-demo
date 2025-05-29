@@ -54,6 +54,23 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+// Get all player scores
+app.get('/api/scores', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT player_name, COUNT(*) as score 
+       FROM game_state 
+       WHERE is_hit = true 
+       GROUP BY player_name 
+       ORDER BY score DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching scores:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Make a guess
 app.post('/api/game/guess', async (req, res) => {
   try {
