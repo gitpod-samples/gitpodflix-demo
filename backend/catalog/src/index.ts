@@ -79,11 +79,14 @@ app.get('/api/scores/:gameId', async (req, res) => {
   try {
     const { gameId } = req.params;
     const result = await pool.query(
-      `SELECT player_name, COUNT(*) as score 
+      `SELECT 
+        player_name,
+        COUNT(*) FILTER (WHERE is_hit = true) as score,
+        COUNT(*) as total_guesses
        FROM game_state 
-       WHERE game_id = $1 AND is_hit = true 
+       WHERE game_id = $1
        GROUP BY player_name 
-       ORDER BY score DESC`,
+       ORDER BY score DESC, total_guesses ASC`,
       [gameId]
     );
     res.json(result.rows);

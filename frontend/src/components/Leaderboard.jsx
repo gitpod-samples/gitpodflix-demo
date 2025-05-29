@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAllScores, fetchGameScores } from '../services/api';
+import { fetchAllScores } from '../services/api';
 
 function Leaderboard({ currentGameState }) {
   const [scores, setScores] = useState([]);
@@ -11,12 +11,7 @@ function Leaderboard({ currentGameState }) {
     setError(null);
 
     try {
-      let scoresData;
-      if (currentGameState?.id) {
-        scoresData = await fetchGameScores(currentGameState.id);
-      } else {
-        scoresData = await fetchAllScores();
-      }
+      const scoresData = await fetchAllScores();
       setScores(scoresData);
     } catch (err) {
       setError('Failed to load leaderboard');
@@ -31,16 +26,10 @@ function Leaderboard({ currentGameState }) {
     loadScores();
   }, [currentGameState]);
 
-  // Refresh scores every 5 seconds
-  useEffect(() => {
-    const intervalId = setInterval(loadScores, 5000);
-    return () => clearInterval(intervalId);
-  }, [currentGameState]);
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        {currentGameState?.id ? 'Game Leaderboard' : 'Global Leaderboard'}
+        Global Leaderboard
       </h2>
       
       {error && (
