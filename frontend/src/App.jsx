@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import GameBoard from './components/GameBoard';
 import Leaderboard from './components/Leaderboard';
+import './styles/vintage.css'; // We'll create this file next
 
 function App() {
   const [currentGameState, setCurrentGameState] = useState(null);
@@ -10,12 +11,12 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="grid grid-cols-4 h-screen relative">
-        <div className="w-full h-full bg-white">
+    <div className="min-h-screen vintage-bg">
+      <div className="grid grid-cols-4 h-screen relative vintage-container">
+        <div className="w-full h-full vintage-panel">
           <Leaderboard currentGameState={currentGameState} />
         </div>
-        <div className="w-full h-full bg-white border-l border-gray-200 col-span-3">
+        <div className="w-full h-full vintage-panel border-l border-vintage-border col-span-3">
           <GameBoard onGuess={handleGuess} />
         </div>
       </div>

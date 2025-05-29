@@ -29,7 +29,7 @@ function Leaderboard({ currentGameState }) {
   return (
     <div className="bg-white p-6 h-full">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Global Leaderboard
+        Winners
       </h2>
       
       {error && (
@@ -48,7 +48,9 @@ function Leaderboard({ currentGameState }) {
               className="flex justify-between items-center p-2 bg-gray-50 rounded"
             >
               <div className="flex items-center">
-                <span className="font-bold mr-2 text-gray-800">#{index + 1}</span>
+                <span className="font-bold mr-2 text-gray-800">
+                  {index === 0 ? '🏆' : `#${index + 1}`}
+                </span>
                 <span className="text-gray-700">{player.player_name}</span>
               </div>
               <span className="font-bold text-gray-800">{player.score} hits</span>

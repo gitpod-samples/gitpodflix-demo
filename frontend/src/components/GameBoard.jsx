@@ -245,68 +245,24 @@ function GameBoard({ onGuess }) {
   };
 
   return (
-    <div className="bg-white p-6 h-full">
-      <div className="mb-4">
-        <input
-          type="text"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-          placeholder="Enter your name"
-          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder-gray-400"
-          disabled={isGameOver}
-        />
-      </div>
-      
-      <div className="mb-4">
-        <select
-          value={selectedGameId || ''}
-          onChange={(e) => setSelectedGameId(e.target.value)}
-          className="w-full p-2 border rounded transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-          disabled={isGameOver}
-        >
-          <option value="">Select a game</option>
-          {gameHistory
-            .filter(game => game && game.game_id)
-            .map((game, index) => (
-              <option key={`${game.game_id}-${index}`} value={game.game_id}>
-                Game {game.game_id.slice(0, 8)} - {game.game_timestamp ? new Date(game.game_timestamp).toLocaleString() : 'Unknown date'}
-              </option>
-            ))}
-        </select>
-      </div>
-      
-      {error && (
-        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded animate-fade-in">
-          {error}
-        </div>
-      )}
-      
-      <div className="mb-4">
-        <h3 className="font-bold mb-2 text-gray-800">Ships:</h3>
-        <div className="flex flex-wrap gap-2">
-          {shipStatus.map((ship) => (
-            <span
-              key={ship.name}
-              className={`px-2 py-1 rounded transition-all duration-300 ${
-                ship.isSunk 
-                  ? 'bg-red-100 text-red-800 animate-bounce' 
-                  : 'bg-blue-100 text-blue-800'
-              }`}
-            >
-              {ship.name} ({ship.size})
-            </span>
-          ))}
+    <div className="bg-white p-6 h-full flex flex-col">
+      {/* Player Name Banner */}
+      <div className="mb-6">
+        <div className="player-field">
+          {playerName ? (
+            <div>
+              {playerName}'s Turn! 🎯
+            </div>
+          ) : (
+            <div className="animate-pulse">
+              Enter Your Name to Play!
+            </div>
+          )}
         </div>
       </div>
-      
-      {isGameOver && (
-        <div className="mb-4 p-4 bg-green-100 text-green-800 rounded text-center animate-scale-in">
-          <h3 className="font-bold text-xl mb-2">Game Over!</h3>
-          <p>Congratulations! You've sunk all the ships!</p>
-        </div>
-      )}
-      
-      <div className="mb-4">
+
+      {/* Game Board */}
+      <div className="mb-6 flex-grow">
         <div className="grid grid-rows-[auto_1fr]">
           {/* Column headers and top-left empty cell */}
           <div className="grid grid-cols-11 border-b border-gray-300">
@@ -352,14 +308,71 @@ function GameBoard({ onGuess }) {
           </div>
         </div>
       </div>
-      
-      <button
-        onClick={handleNewGame}
-        disabled={isLoading}
-        className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 transition-all duration-300 hover:scale-105"
-      >
-        New Game
-      </button>
+
+      {/* Ship Status */}
+      <div className="mb-6 border-2 border-vintage-border rounded-lg p-4">
+        <div className="flex flex-wrap gap-2 justify-center items-center min-h-[60px]">
+          {shipStatus.map((ship) => (
+            <span
+              key={ship.name}
+              className={`px-2 py-1 rounded transition-all duration-300 ${
+                ship.isSunk 
+                  ? 'bg-red-100 text-red-800 animate-bounce' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}
+            >
+              {ship.name} ({ship.size})
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Controls Row */}
+      <div className="flex gap-4 items-stretch">
+        <input
+          type="text"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          placeholder="Enter your name"
+          className="w-1/3 p-3 border-2 border-vintage-border rounded-lg transition-all duration-300 focus:ring-2 focus:ring-vintage-accent focus:border-vintage-accent text-gray-800 placeholder-gray-400 font-vintage"
+          disabled={isGameOver}
+        />
+        <select
+          value={selectedGameId || ''}
+          onChange={(e) => setSelectedGameId(e.target.value)}
+          className="w-1/3 p-3 border-2 border-vintage-border rounded-lg transition-all duration-300 focus:ring-2 focus:ring-vintage-accent focus:border-vintage-accent text-gray-800"
+          disabled={isGameOver}
+        >
+          <option value="">Select a game</option>
+          {gameHistory
+            .filter(game => game && game.game_id)
+            .map((game, index) => (
+              <option key={`${game.game_id}-${index}`} value={game.game_id}>
+                Game {game.game_id.slice(0, 8)} - {game.game_timestamp ? new Date(game.game_timestamp).toLocaleString() : 'Unknown date'}
+              </option>
+            ))}
+        </select>
+        <button
+          onClick={handleNewGame}
+          disabled={isLoading}
+          className="w-1/3 p-3 bg-[#e74c3c] text-white rounded-lg hover:bg-opacity-90 disabled:opacity-50 transition-all duration-300 hover:scale-105 font-vintage text-lg font-bold"
+        >
+          New Game
+        </button>
+      </div>
+
+      {error && (
+        <div className="mt-4 p-2 bg-red-100 text-red-700 rounded animate-fade-in">
+          {error}
+        </div>
+      )}
+
+      {isGameOver && (
+        <div className="mt-4 p-4 bg-green-100 text-green-800 rounded text-center animate-scale-in">
+          <h3 className="font-bold text-xl mb-2">Game Over!</h3>
+          <p>Congratulations! You've sunk all the ships!</p>
+        </div>
+      )}
     </div>
   );
 }

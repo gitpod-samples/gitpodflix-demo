@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+:root {
+  --vintage-bg: #2c3e50;
+  --vintage-panel: #34495e;
+  --vintage-border: #7f8c8d;
+  --vintage-text: #ecf0f1;
+  --vintage-accent: #e74c3c;
+  --vintage-button: #e74c3c;
+}
+
+.vintage-bg {
+  background-color: var(--vintage-bg);
+  background-image: 
+    linear-gradient(45deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.1) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.1) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.vintage-container {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.vintage-panel {
+  background-color: var(--vintage-panel);
+  color: var(--vintage-text);
+  font-family: 'VT323', monospace;
+  font-size: 1.8rem;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 1.5rem;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.border-vintage-border {
+  border-color: var(--vintage-border) !important;
+}
+
+/* Add some retro-style text effects */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Press Start 2P', cursive;
+  color: var(--vintage-text);
+  text-shadow: 1px 1px 0px var(--vintage-accent);
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  font-size: 1.4em;
+}
+
+/* Player field styling */
+.player-field {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--vintage-accent);
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  margin: 1rem 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  border: 2px solid var(--vintage-accent);
+  position: relative;
+  overflow: hidden;
+}
+
+.player-field::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  30% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Add a subtle scanline effect */
+.vintage-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.05) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.2;
+} 
