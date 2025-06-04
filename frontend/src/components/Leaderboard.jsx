@@ -24,6 +24,12 @@ function Leaderboard({ currentGameState }) {
   // Load scores initially and when game state changes
   useEffect(() => {
     loadScores();
+
+    // Set up polling interval
+    const pollInterval = setInterval(loadScores, 2000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(pollInterval);
   }, [currentGameState]);
 
   return (

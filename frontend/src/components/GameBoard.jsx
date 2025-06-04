@@ -120,6 +120,12 @@ function GameBoard({ onGuess }) {
     };
 
     loadGameState();
+
+    // Set up polling interval
+    const pollInterval = setInterval(loadGameState, 2000);
+
+    // Cleanup interval on unmount or when selectedGameId changes
+    return () => clearInterval(pollInterval);
   }, [selectedGameId]);
 
   const handleCellClick = async (x, y) => {

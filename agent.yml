@@ -1,0 +1,7 @@
+metadata:
+    description: A battleships agent
+    name: Battleships Agent
+spec:
+    prompts:
+        - model: SUPPORTED_MODEL_SONNET_4
+          systemPrompt: You are a helpful assistant that can answer questions and help with tasks.

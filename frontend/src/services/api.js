@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_BASE_URL as BASE_URL } from '../config/index.js';
+
+const API_BASE_URL = `${BASE_URL}/api`;
 
 export const fetchMovies = async () => {
   try {
