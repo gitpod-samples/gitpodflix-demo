@@ -48,10 +48,12 @@ function GameBoard({ onGuess }) {
   }, []);
 
   useEffect(() => {
-    const loadGameState = async () => {
+        const loadGameState = async (showLoading = true) => {
       if (!selectedGameId) return;
       
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       setError(null);
       
       try {
@@ -115,14 +117,17 @@ function GameBoard({ onGuess }) {
         setError('Failed to load game state');
         console.error(err);
       } finally {
-        setIsLoading(false);
+        if (showLoading) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadGameState();
+    // Initial load with loading indicator
+    loadGameState(true);
 
-    // Set up polling interval
-    const pollInterval = setInterval(loadGameState, 2000);
+    // Set up polling interval without loading indicator
+    const pollInterval = setInterval(() => loadGameState(false), 2000);
 
     // Cleanup interval on unmount or when selectedGameId changes
     return () => clearInterval(pollInterval);

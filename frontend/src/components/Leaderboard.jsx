@@ -6,8 +6,10 @@ function Leaderboard({ currentGameState }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadScores = async () => {
-    setIsLoading(true);
+    const loadScores = async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -17,16 +19,19 @@ function Leaderboard({ currentGameState }) {
       setError('Failed to load leaderboard');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
   // Load scores initially and when game state changes
   useEffect(() => {
-    loadScores();
+    // Initial load with loading indicator
+    loadScores(true);
 
-    // Set up polling interval
-    const pollInterval = setInterval(loadScores, 2000);
+    // Set up polling interval without loading indicator
+    const pollInterval = setInterval(() => loadScores(false), 2000);
 
     // Cleanup interval on unmount
     return () => clearInterval(pollInterval);
