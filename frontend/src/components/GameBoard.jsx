@@ -80,20 +80,23 @@ function GameBoard({ onGuess }) {
         
         setGameBoard(newBoard);
         
-        // Initialize ships if not already set
-        if (!ships) {
-          const newShips = generateShipPositions();
-          setShips(newShips);
+        // Initialize ships if not already set, or use existing ships
+        let currentShips = ships;
+        if (!currentShips) {
+          currentShips = generateShipPositions();
+          setShips(currentShips);
         }
         
-        // Check for sunk ships
-        if (ships) {
-          const newSunkShips = ships.filter(ship => 
-            isShipSunk(ship, gameState.map(guess => ({
-              x: guess.x_coordinate,
-              y: guess.y_coordinate,
-              isHit: guess.is_hit
-            })))
+        // Check for sunk ships using current ships
+        if (currentShips) {
+          const gameGuesses = gameState.map(guess => ({
+            x: guess.x_coordinate,
+            y: guess.y_coordinate,
+            isHit: guess.is_hit
+          }));
+          
+          const newSunkShips = currentShips.filter(ship => 
+            isShipSunk(ship, gameGuesses)
           );
           setSunkShips(newSunkShips);
           
@@ -106,11 +109,7 @@ function GameBoard({ onGuess }) {
           );
           
           // Check for game over
-          const allShipsSunk = areAllShipsSunk(ships, gameState.map(guess => ({
-            x: guess.x_coordinate,
-            y: guess.y_coordinate,
-            isHit: guess.is_hit
-          })));
+          const allShipsSunk = areAllShipsSunk(currentShips, gameGuesses);
           setIsGameOver(allShipsSunk);
         }
       } catch (err) {
