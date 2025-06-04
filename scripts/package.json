@@ -1,0 +1,15 @@
+{
+  "name": "battleship-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for managing battleship game",
+  "main": "scripts/create_game.js",
+  "scripts": {
+    "create-game": "node scripts/create_game.js",
+    "add-score": "node scripts/add_score.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "node-fetch": "^2.6.9",
+    "uuid": "^9.0.0"
+  }
+} 
