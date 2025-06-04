@@ -6,7 +6,7 @@ echo "🚀 Setting up Minikube for GitpodFlix..."
 
 # Start Minikube
 echo "Starting Minikube..."
-minikube start --driver=docker --memory=4096 --cpus=2
+minikube start --driver=docker --memory=4096 --cpus=2 --force
 
 # Configure Docker to use Minikube's Docker daemon
 echo "Configuring Docker environment..."

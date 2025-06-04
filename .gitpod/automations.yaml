@@ -12,9 +12,9 @@ services:
         # Check if Minikube is already running
         if minikube status | grep -q "Running"; then
           echo "✅ Minikube is already running"
-        else
+                else
           echo "Starting Minikube..."
-          minikube start --driver=docker --memory=4096 --cpus=2
+          minikube start --driver=docker --memory=4096 --cpus=2 --force
         fi
 
         # Configure Docker environment
