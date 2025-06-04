@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-echo "🚀 Starting development environment setup..."
+echo "🚀 Starting Kubernetes development environment setup..."
 
 # Function to handle package installation
 install_package() {
@@ -22,11 +22,10 @@ apt-get clean
 echo "🔄 Updating package lists..."
 apt-get update
 
-# Install system dependencies one by one with error handling
+# Install system dependencies
 echo "📦 Installing system dependencies..."
-install_package "mariadb-client"
-install_package "mariadb-server"
 install_package "postgresql-client"
+install_package "net-tools"
 
 # Verify PostgreSQL client tools are installed
 if ! command -v pg_isready &> /dev/null; then
@@ -34,19 +33,19 @@ if ! command -v pg_isready &> /dev/null; then
     exit 1
 fi
 
-# Start MariaDB service
-echo "💾 Starting MariaDB service..."
-if ! service mariadb status > /dev/null 2>&1; then
-    service mariadb start
-else
-    echo "✅ MariaDB service is already running"
-fi
-
-# Verify MariaDB is running
-if ! service mariadb status > /dev/null 2>&1; then
-    echo "❌ Failed to start MariaDB service"
+# Verify Kubernetes tools are available
+echo "🔍 Verifying Kubernetes tools..."
+if ! command -v kubectl &> /dev/null; then
+    echo "❌ kubectl not found"
     exit 1
 fi
+
+if ! command -v minikube &> /dev/null; then
+    echo "❌ minikube not found"
+    exit 1
+fi
+
+echo "✅ Kubernetes tools verified"
 
 # Install global npm packages
 echo "📦 Installing global npm packages..."
@@ -69,4 +68,12 @@ if [ -d "/workspaces/gitpodflix-demo/backend/catalog" ]; then
     npm install
 fi
 
-echo "✅ Setup completed successfully!" 
+# Make scripts executable
+echo "🔧 Making scripts executable..."
+chmod +x /workspaces/gitpodflix-demo/scripts/*.sh
+
+echo "✅ Kubernetes development environment setup completed successfully!"
+echo "🎯 Next steps:"
+echo "   1. Run 'Setup Minikube' task to initialize the cluster"
+echo "   2. Run 'Start Port Forwards' task to access services"
+echo "   3. Run 'Seed Database' task to populate with sample data"

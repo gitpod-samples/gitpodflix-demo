@@ -1,5 +1,5 @@
 {
-  "name": "GitpodFlix Dev Environment",
+  "name": "GitpodFlix Dev Environment - Kubernetes",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
@@ -17,6 +17,11 @@
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
       "moby": true
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "latest"
     }
   },
   "forwardPorts": [
@@ -33,7 +38,8 @@
         "mtxr.sqltools",
         "mtxr.sqltools-driver-sqlite",
         "mtxr.sqltools-driver-mysql",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
       ],
       "settings": {
         "editor.formatOnSave": true

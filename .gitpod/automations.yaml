@@ -1,110 +1,224 @@
 services:
-  postgres:
-    name: "PostgreSQL Database"
-    description: "PostgreSQL database for Gitpod Flix (Port: 5432)"
+  minikube:
+    name: "Minikube Cluster"
+    description: "Kubernetes cluster running all GitpodFlix services"
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
     commands:
       start: |
-        # Force cleanup of any existing PostgreSQL containers
-        echo "Cleaning up any existing PostgreSQL containers..."
-        docker rm -f postgres 2>/dev/null || true
-        sleep 2  # Give Docker time to clean up
+        echo "🚀 Starting Minikube cluster..."
+        
+        # Check if Minikube is already running
+        if minikube status | grep -q "Running"; then
+          echo "✅ Minikube is already running"
+        else
+          echo "Starting Minikube..."
+          minikube start --driver=docker --memory=4096 --cpus=2
+        fi
 
-        echo "Starting PostgreSQL with Docker..."
-        docker run --rm \
-          --name postgres \
-          -e POSTGRES_USER=gitpod \
-          -e POSTGRES_PASSWORD=gitpod \
-          -e POSTGRES_DB=gitpodflix \
-          -p 5432:5432 \
-          -v postgres_data:/var/lib/postgresql/data \
-          -v /workspaces/gitpodflix-demo/database/main/migrations:/docker-entrypoint-initdb.d \
-          postgres:15
+        # Configure Docker environment
+        eval $(minikube docker-env)
+
+        # Build images if they don't exist
+        if ! docker images | grep -q "catalog-service:latest"; then
+          echo "Building catalog service image..."
+          cd /workspaces/gitpodflix-demo/backend/catalog
+          docker build -t catalog-service:latest .
+        fi
+
+        if ! docker images | grep -q "frontend:latest"; then
+          echo "Building frontend image..."
+          cd /workspaces/gitpodflix-demo/frontend
+          docker build -t frontend:latest .
+        fi
+
+        cd /workspaces/gitpodflix-demo
+
+        # Apply Kubernetes manifests
+        echo "Applying Kubernetes manifests..."
+        kubectl apply -f k8s/postgres.yaml
+        kubectl apply -f k8s/catalog-service.yaml
+        kubectl apply -f k8s/frontend.yaml
+
+        # Wait for deployments
+        echo "Waiting for deployments to be ready..."
+        kubectl wait --for=condition=available --timeout=300s deployment/postgres || true
+        kubectl wait --for=condition=available --timeout=300s deployment/catalog-service || true
+        kubectl wait --for=condition=available --timeout=300s deployment/frontend || true
 
       ready: |
-        if docker exec postgres pg_isready -U gitpod; then
-          echo "PostgreSQL is ready and accepting connections"
-          exit 0
-        else
-          echo "PostgreSQL not ready"
+        # Check if all pods are running
+        if kubectl get pods | grep -E "(postgres|catalog-service|frontend)" | grep -v Running; then
+          echo "Some pods are not running yet"
           exit 1
+        else
+          echo "All services are running in Kubernetes"
+          exit 0
         fi
 
       stop: |
-        echo "Stopping PostgreSQL container..."
-        docker stop postgres || true
-        echo "Removing PostgreSQL container..."
-        docker rm -f postgres || true
+        echo "Stopping Kubernetes services..."
+        kubectl delete -f k8s/ --ignore-not-found=true
+        echo "Stopping Minikube..."
+        minikube stop
 
-  catalog:
-    name: "Catalog Service"
-    description: "Movie catalog API service (Port: 3001)"
+  postgres-port-forward:
+    name: "PostgreSQL Port Forward"
+    description: "Port forward PostgreSQL service (Port: 5432)"
     triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
+      - manual
     commands:
       start: |
-        cd /workspaces/gitpodflix-demo/backend/catalog
-        PORT=3001 npx nodemon src/index.ts
+        echo "Starting PostgreSQL port forward..."
+        kubectl port-forward service/postgres-service 5432:5432 &
+        echo $! > /tmp/postgres-port-forward.pid
+        sleep 2
+        echo "PostgreSQL available at localhost:5432"
+
       ready: |
-        if curl -s http://localhost:3001/health > /dev/null; then
-          echo "Catalog service is ready"
+        if netstat -tuln | grep -q ":5432"; then
+          echo "PostgreSQL port forward is active"
           exit 0
         else
-          echo "Catalog service not ready"
+          echo "PostgreSQL port forward not active"
           exit 1
         fi
-      stop: |
-        pkill -f "node.*catalog" || true
 
-  gitpod-flix:
-    name: "Gitpod Flix"
-    description: "Streaming platform frontend (Port: 3000)"
+      stop: |
+        if [ -f /tmp/postgres-port-forward.pid ]; then
+          kill $(cat /tmp/postgres-port-forward.pid) 2>/dev/null || true
+          rm -f /tmp/postgres-port-forward.pid
+        fi
+        pkill -f "kubectl port-forward.*postgres" || true
+
+  catalog-port-forward:
+    name: "Catalog Service Port Forward"
+    description: "Port forward Catalog API service (Port: 3001)"
     triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
+      - manual
     commands:
       start: |
-        cd /workspaces/gitpodflix-demo/frontend
+        echo "Starting Catalog service port forward..."
+        kubectl port-forward service/catalog-service 3001:3001 &
+        echo $! > /tmp/catalog-port-forward.pid
+        sleep 2
+        echo "Catalog API available at localhost:3001"
 
-        # Wait for vite to be available
-        echo "Waiting for vite to be available..."
-        for i in {1..30}; do
-          if command -v vite >/dev/null 2>&1 || [ -f "node_modules/.bin/vite" ]; then
-            echo "✓ vite is available"
-            break
-          fi
-          if [ $i -eq 30 ]; then
-            echo "✗ Timeout waiting for vite"
-            exit 1
-          fi
-          echo "Waiting for vite... attempt $i/30"
-          sleep 2
-        done
-
-        PORT=3000 npm run dev
       ready: |
-        if curl -s http://localhost:3000 > /dev/null; then
-          echo "Gitpod Flix is ready"
+        if netstat -tuln | grep -q ":3001"; then
+          echo "Catalog port forward is active"
           exit 0
         else
-          echo "Gitpod Flix not ready"
+          echo "Catalog port forward not active"
           exit 1
         fi
+
       stop: |
-        pkill -f "node.*frontend" || true
+        if [ -f /tmp/catalog-port-forward.pid ]; then
+          kill $(cat /tmp/catalog-port-forward.pid) 2>/dev/null || true
+          rm -f /tmp/catalog-port-forward.pid
+        fi
+        pkill -f "kubectl port-forward.*catalog" || true
+
+  frontend-port-forward:
+    name: "Frontend Port Forward"
+    description: "Port forward Frontend service (Port: 3000)"
+    triggeredBy:
+      - manual
+    commands:
+      start: |
+        echo "Starting Frontend port forward..."
+        kubectl port-forward service/frontend-service 3000:3000 &
+        echo $! > /tmp/frontend-port-forward.pid
+        sleep 2
+        echo "Frontend available at localhost:3000"
+
+      ready: |
+        if netstat -tuln | grep -q ":3000"; then
+          echo "Frontend port forward is active"
+          exit 0
+        else
+          echo "Frontend port forward not active"
+          exit 1
+        fi
+
+      stop: |
+        if [ -f /tmp/frontend-port-forward.pid ]; then
+          kill $(cat /tmp/frontend-port-forward.pid) 2>/dev/null || true
+          rm -f /tmp/frontend-port-forward.pid
+        fi
+        pkill -f "kubectl port-forward.*frontend" || true
 
 tasks:
+  setupMinikube:
+    name: "Setup Minikube"
+    description: "Initialize Minikube cluster and deploy all services"
+    triggeredBy:
+      - manual
+      - postEnvironmentStart
+    command: |
+      /workspaces/gitpodflix-demo/scripts/setup-minikube.sh
+
+  startPortForwards:
+    name: "Start Port Forwards"
+    description: "Start all port forwards for local access"
+    triggeredBy:
+      - manual
+    command: |
+      echo "Starting all port forwards..."
+      
+      # Start PostgreSQL port forward
+      kubectl port-forward service/postgres-service 5432:5432 &
+      echo $! > /tmp/postgres-port-forward.pid
+      
+      # Start Catalog service port forward
+      kubectl port-forward service/catalog-service 3001:3001 &
+      echo $! > /tmp/catalog-port-forward.pid
+      
+      # Start Frontend port forward
+      kubectl port-forward service/frontend-service 3000:3000 &
+      echo $! > /tmp/frontend-port-forward.pid
+      
+      sleep 3
+      echo "✅ All port forwards started!"
+      echo "🌐 Frontend: http://localhost:3000"
+      echo "🔌 Catalog API: http://localhost:3001"
+      echo "🗄️ PostgreSQL: localhost:5432"
+
+  stopPortForwards:
+    name: "Stop Port Forwards"
+    description: "Stop all port forwards"
+    triggeredBy:
+      - manual
+    command: |
+      echo "Stopping all port forwards..."
+      
+      # Stop all port forwards
+      for pid_file in /tmp/*-port-forward.pid; do
+        if [ -f "$pid_file" ]; then
+          kill $(cat "$pid_file") 2>/dev/null || true
+          rm -f "$pid_file"
+        fi
+      done
+      
+      pkill -f "kubectl port-forward" || true
+      echo "✅ All port forwards stopped"
+
   seedDatabase:
     name: "Seed Database"
     description: "Seed the database with sample movies in a dramatic sequence"
     triggeredBy:
       - manual
-      - postEnvironmentStart
     command: |
       cd /workspaces/gitpodflix-demo/database/main
+
+      # Ensure PostgreSQL port forward is active
+      if ! netstat -tuln | grep -q ":5432"; then
+        echo "Starting PostgreSQL port forward..."
+        kubectl port-forward service/postgres-service 5432:5432 &
+        sleep 3
+      fi
 
       # Wait for PostgreSQL to be ready
       echo "Waiting for PostgreSQL to be ready..."
@@ -122,7 +236,7 @@ tasks:
       done
 
       echo "Clearing existing data..."
-      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
+      PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;" 2>/dev/null || true
 
       echo "Seeding trending movies..."
       PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -f seeds/01_seed_trending.sql
@@ -147,7 +261,44 @@ tasks:
       - manual
     command: |
       cd /workspaces/gitpodflix-demo/database/main
+      
+      # Ensure PostgreSQL port forward is active
+      if ! netstat -tuln | grep -q ":5432"; then
+        echo "Starting PostgreSQL port forward..."
+        kubectl port-forward service/postgres-service 5432:5432 &
+        sleep 3
+      fi
+      
       PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "TRUNCATE TABLE movies;"
+
+  showKubernetesStatus:
+    name: "Show Kubernetes Status"
+    description: "Display status of all Kubernetes resources"
+    triggeredBy:
+      - manual
+    command: |
+      echo "🔍 Kubernetes Cluster Status:"
+      echo "================================"
+      
+      echo "📊 Minikube Status:"
+      minikube status
+      echo ""
+      
+      echo "🏗️ Deployments:"
+      kubectl get deployments
+      echo ""
+      
+      echo "🔌 Services:"
+      kubectl get services
+      echo ""
+      
+      echo "📦 Pods:"
+      kubectl get pods
+      echo ""
+      
+      echo "💾 Persistent Volumes:"
+      kubectl get pv,pvc
+      echo ""
 
   openDemoPorts:
     name: "Open Demo Ports"
