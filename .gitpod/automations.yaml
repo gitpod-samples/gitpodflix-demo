@@ -96,6 +96,27 @@ services:
       stop: |
         pkill -f "node.*frontend" || true
 
+  coverage-ui:
+    name: "Code Coverage UI"
+    description: "Vitest coverage UI (Port: 51234)"
+    triggeredBy:
+      - postDevcontainerStart
+      - postEnvironmentStart
+    commands:
+      start: |
+        cd /workspaces/gitpodflix-demo/frontend
+        npm run coverage:ui
+      ready: |
+        if curl -s http://localhost:51234 > /dev/null; then
+          echo "Coverage UI is ready"
+          exit 0
+        else
+          echo "Coverage UI not ready"
+          exit 1
+        fi
+      stop: |
+        pkill -f "vitest.*--ui" || true
+
 tasks:
   seedDatabase:
     name: "Seed Database"
