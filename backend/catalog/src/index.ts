@@ -21,47 +21,100 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.get('/api/movies', async (req, res) => {
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Get game state
+app.get('/api/game/:gameId', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM movies ORDER BY rating DESC');
+    const { gameId } = req.params;
+    const result = await pool.query(
+      'SELECT * FROM game_state WHERE game_id = $1 ORDER BY created_at ASC',
+      [gameId]
+    );
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching movies:', err);
+    console.error('Error fetching game state:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/api/movies/seed', async (req, res) => {
+// Get game history
+app.get('/api/games', async (req, res) => {
   try {
-    // Execute the seed script
-    await pool.query(`
-      TRUNCATE TABLE movies;
-      INSERT INTO movies (title, description, release_year, rating, image_url) VALUES
-      ('The Shawshank Redemption', 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.', 1994, 9.3, 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_.jpg'),
-      ('The Godfather', 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.', 1972, 9.2, 'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg'),
-      ('The Dark Knight', 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.', 2008, 9.0, 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg'),
-      ('Pulp Fiction', 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.', 1994, 8.9, 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg'),
-      ('Fight Club', 'An insomniac office worker and a devil-may-care soapmaker form an underground fight club that evolves into something much, much more.', 1999, 8.8, 'https://m.media-amazon.com/images/M/MV5BNDIzNDU0YzEtYzE5Ni00ZjlkLTk5ZjgtNjM3NWE4YzA3Nzk3XkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_.jpg')
-    `);
-    res.json({ message: 'Database seeded successfully' });
+    const result = await pool.query(
+      'SELECT DISTINCT game_id, game_timestamp FROM game_state ORDER BY game_timestamp DESC'
+    );
+    res.json(result.rows);
   } catch (err) {
-    console.error('Error seeding database:', err);
+    console.error('Error fetching game history:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/api/movies/clear', async (req, res) => {
+// Get all player scores
+app.get('/api/scores', async (req, res) => {
   try {
-    await pool.query('TRUNCATE TABLE movies');
-    res.json({ message: 'Database cleared successfully' });
+    const result = await pool.query(
+      `SELECT 
+        player_name,
+        COUNT(*) FILTER (WHERE is_hit = true) as score,
+        COUNT(*) as total_guesses,
+        MAX(created_at) as last_guess
+       FROM game_state 
+       GROUP BY player_name 
+       ORDER BY score DESC, last_guess DESC`
+    );
+    res.json(result.rows);
   } catch (err) {
-    console.error('Error clearing database:', err);
+    console.error('Error fetching scores:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get scores for a specific game
+app.get('/api/scores/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const result = await pool.query(
+      `SELECT 
+        player_name,
+        COUNT(*) FILTER (WHERE is_hit = true) as score,
+        COUNT(*) as total_guesses
+       FROM game_state 
+       WHERE game_id = $1
+       GROUP BY player_name 
+       ORDER BY score DESC, total_guesses ASC`,
+      [gameId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching game scores:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Make a guess
+app.post('/api/game/guess', async (req, res) => {
+  try {
+    const { gameId, playerName, x, y, isHit } = req.body;
+    
+    // Store the guess
+    await pool.query(
+      'INSERT INTO game_state (game_id, player_name, x_coordinate, y_coordinate, is_hit) VALUES ($1, $2, $3, $4, $5)',
+      [gameId, playerName, x, y, isHit]
+    );
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error processing guess:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Start server
 app.listen(port, () => {
-  console.log(`Catalog service running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 }); 
