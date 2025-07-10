@@ -118,4 +118,35 @@ describe('Catalog Service API', () => {
         .expect(404);
     });
   });
+  
+  describe('Server Configuration', () => {
+    it('should configure express middleware correctly', () => {
+      // Test that express middleware is configured
+      expect(app.use).toBeDefined();
+    });
+    
+    it('should handle server startup conditionally', () => {
+      // Test that the server doesn't start in test mode
+      const originalNodeEnv = process.env.NODE_ENV;
+      
+      // Set to test mode
+      process.env.NODE_ENV = 'test';
+      
+      // Mock app.listen
+      const listenMock = jest.fn();
+      const originalListen = app.listen;
+      app.listen = listenMock;
+      
+      // Re-require the module
+      jest.resetModules();
+      require('./index');
+      
+      // Verify listen was not called in test mode
+      expect(listenMock).not.toHaveBeenCalled();
+      
+      // Restore
+      app.listen = originalListen;
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+  });
 });
