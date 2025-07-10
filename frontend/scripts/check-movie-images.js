@@ -1,4 +1,5 @@
-const movies = {
+// Export for testing
+export const movies = {
   trending: [
     { id: 1, title: 'The Matrix', image: 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg' },
     { id: 2, title: 'Inception', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
@@ -19,7 +20,7 @@ const movies = {
   ]
 };
 
-async function checkImage(url) {
+export async function checkImage(url) {
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -32,7 +33,7 @@ async function checkImage(url) {
   }
 }
 
-async function checkAllImages() {
+export async function checkAllImages() {
   console.log('Checking all movie images...\n');
   
   for (const [category, movieList] of Object.entries(movies)) {
@@ -45,4 +46,7 @@ async function checkAllImages() {
   }
 }
 
-checkAllImages(); 
+// Only run if this is the main module (not imported for testing)
+if (typeof require !== 'undefined' && require.main === module) {
+  checkAllImages();
+}

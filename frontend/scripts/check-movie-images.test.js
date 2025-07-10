@@ -1,43 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Mock the movies data
-const movies = {
-  trending: [
-    { id: 1, title: 'The Matrix', image: 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg' },
-    { id: 2, title: 'Inception', image: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg' },
-  ],
-  popular: [
-    { id: 5, title: 'Pulp Fiction', image: 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg' },
-    { id: 6, title: 'Fight Club', image: 'https://image.tmdb.org/t/p/w500/a26cQPRhJPX6GbWfQbvZdrrp9j9.jpg' },
-  ]
-};
-
-// Define the functions to test
-async function checkImage(url) {
-  try {
-    const response = await fetch(url);
-    if (response.ok) {
-      return { status: 'OK', statusCode: response.status };
-    } else {
-      return { status: 'ERROR', statusCode: response.status };
-    }
-  } catch (error) {
-    return { status: 'ERROR', error: error.message };
-  }
-}
-
-async function checkAllImages() {
-  console.log('Checking all movie images...\n');
-  
-  for (const [category, movieList] of Object.entries(movies)) {
-    console.log(`Category: ${category}`);
-    for (const movie of movieList) {
-      const result = await checkImage(movie.image);
-      console.log(`${movie.title} (ID: ${movie.id}): ${result.status} - ${result.statusCode || result.error}`);
-    }
-    console.log('');
-  }
-}
+import { checkImage, checkAllImages, movies } from './check-movie-images';
 
 describe('check-movie-images.js', () => {
   beforeEach(() => {
@@ -100,12 +62,13 @@ describe('check-movie-images.js', () => {
 
     await checkAllImages();
     
-    // Should call fetch for each movie
-    expect(global.fetch).toHaveBeenCalledTimes(4); // 2 trending + 2 popular
+    // Should call fetch for each movie (12 total in the actual movies object)
+    expect(global.fetch).toHaveBeenCalledTimes(12);
     
     // Verify console.log was called with the expected messages
     expect(console.log).toHaveBeenCalledWith('Checking all movie images...\n');
     expect(console.log).toHaveBeenCalledWith('Category: trending');
     expect(console.log).toHaveBeenCalledWith('Category: popular');
+    expect(console.log).toHaveBeenCalledWith('Category: scifi');
   });
 });
