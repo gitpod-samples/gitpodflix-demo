@@ -1,3 +1,22 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [],
+  "enabledManagers": ["npm"],
+  "includePaths": ["backend/catalog/package.json"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["jest", "@types/jest"],
+      "enabled": true,
+      "recreateClosed": true
+    },
+    {
+      "matchPackageNames": ["*"],
+      "excludePackageNames": ["jest", "@types/jest"],
+      "enabled": false
+    }
+  ],
+  "recreateClosed": true,
+  "prConcurrentLimit": 0,
+  "prHourlyLimit": 0,
+  "branchConcurrentLimit": 0
 }

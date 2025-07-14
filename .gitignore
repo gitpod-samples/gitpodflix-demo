@@ -37,3 +37,8 @@ coverage/
 .pgsql/
 
 services/database/database.sqlite
+
+# Renovate debug files
+renovate_debug.txt
+renovate_output.txt
+jest_debug.txt
