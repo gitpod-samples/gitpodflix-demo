@@ -6,12 +6,12 @@ use axum::{
 };
 use tower_http::cors::CorsLayer;
 use tracing::{info};
-use tracing_subscriber;
+use tracing_subscriber::fmt::init;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
-    tracing_subscriber::init();
+        init();
 
     let app = Router::new()
         .route("/", get(serve_index))

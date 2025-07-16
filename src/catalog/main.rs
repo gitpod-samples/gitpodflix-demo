@@ -9,7 +9,7 @@ use tower_http::cors::CorsLayer;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tracing::{info, error};
-use tracing_subscriber;
+use tracing_subscriber::fmt::init;
 
 mod shared;
 use shared::{database, models::ApiResponse};
@@ -22,7 +22,7 @@ struct AppState {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
-    tracing_subscriber::init();
+        init();
 
     let pool = database::create_pool().await?;
     let state = AppState { pool };
