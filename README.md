@@ -1,8 +1,8 @@
-# Welcome to GitpodFlix! 🎬
+# Welcome to GitpodFlix! 🎬 - Rust Edition 🦀
 
 Hey there new developer! 👋
 
-Welcome to GitpodFlix, where we're providing the next generation of streaming experiences.
+Welcome to GitpodFlix, where we're providing the next generation of streaming experiences, now powered by Rust for maximum performance and safety!
 
 We're thrilled you joined, let's get you shipping today !
 
@@ -13,6 +13,24 @@ We know happy developers that are in flow create better products and ship more v
 At GitpodFlix we have **zero 'works on my machine' issues** because of **Gitpod**. Onboarding is **one-click to get a running environment with everything you need to ship new fixes and features today** which is why:
 
 We expect every new developer to **ship to production on their first day**.
+
+## 🦀 Rust Refactor Complete!
+
+This codebase has been completely refactored from TypeScript/Node.js to Rust, providing:
+
+- **🚀 Performance**: Lightning-fast API responses with Axum web framework
+- **🔒 Memory Safety**: Zero memory leaks and data races guaranteed at compile time
+- **⚡ Concurrency**: Tokio async runtime for handling thousands of concurrent requests
+- **🧪 Testing**: Comprehensive test suite with better coverage than the original
+- **📦 Single Binary**: Deploy anywhere with a single executable file
+
+### Quick Start (Rust)
+
+```bash
+# The Rust services are ready to go!
+cargo run --bin catalog-service    # API server on port 3001
+cargo run --bin frontend-server    # Frontend on port 3000
+```
 
 ## Starting your development environment
 
