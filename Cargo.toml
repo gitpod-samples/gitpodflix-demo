@@ -18,6 +18,10 @@ anyhow = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
+[dev-dependencies]
+tokio-test = "0.4"
+axum-test = "14.0"
+
 [[bin]]
 name = "catalog-service"
 path = "src/catalog/main.rs"

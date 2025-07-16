@@ -51,7 +51,47 @@ async fn get_movies(
         Err(err) => {
             error!("Error fetching movies: {}", err);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
+                }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum_test::TestServer;
+    use serde_json::Value;
+    
+    #[tokio::test]
+    async fn test_get_movies_endpoint() {
+        let pool = shared::database::create_pool().await.unwrap();
+        let state = AppState { pool };
+        
+        let app = Router::new()
+            .route("/api/movies", get(get_movies))
+            .with_state(Arc::new(state));
+        
+        let server = TestServer::new(app).unwrap();
+        let response = server.get("/api/movies").await;
+        
+        assert_eq!(response.status_code(), 200);
+    }
+    
+    #[tokio::test]
+    async fn test_seed_movies_endpoint() {
+        let pool = shared::database::create_pool().await.unwrap();
+        let state = AppState { pool };
+        
+        let app = Router::new()
+            .route("/api/movies/seed", post(seed_movies))
+            .with_state(Arc::new(state));
+        
+        let server = TestServer::new(app).unwrap();
+        let response = server.post("/api/movies/seed").await;
+        
+        assert_eq!(response.status_code(), 200);
+        
+        let body: Value = response.json();
+        assert!(body["message"].as_str().unwrap().contains("successfully"));
     }
 }
 

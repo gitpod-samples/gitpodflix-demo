@@ -42,3 +42,8 @@ services/database/database.sqlite
 renovate_debug.txt
 renovate_output.txt
 jest_debug.txt
+
+
+# Added by cargo
+
+/target

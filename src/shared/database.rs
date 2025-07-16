@@ -44,3 +44,48 @@ pub async fn clear_movies(pool: &PgPool) -> Result<()> {
     sqlx::query("TRUNCATE TABLE movies").execute(pool).await?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::PgPool;
+    
+    async fn setup_test_db() -> PgPool {
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .unwrap_or_else(|_| "postgresql://gitpod:gitpod@localhost:5432/gitpodflix_test".to_string());
+        
+        PgPool::connect(&database_url).await.expect("Failed to connect to test database")
+    }
+    
+    #[tokio::test]
+    async fn test_get_all_movies_empty() {
+        let pool = setup_test_db().await;
+        let _ = clear_movies(&pool).await;
+        
+        let movies = get_all_movies(&pool).await.unwrap();
+        assert!(movies.is_empty());
+    }
+    
+    #[tokio::test]
+    async fn test_seed_and_get_movies() {
+        let pool = setup_test_db().await;
+        
+        seed_movies(&pool).await.unwrap();
+        let movies = get_all_movies(&pool).await.unwrap();
+        
+        assert_eq!(movies.len(), 5);
+        assert_eq!(movies[0].title, "The Shawshank Redemption");
+        assert_eq!(movies[0].rating, Some(9.3));
+    }
+    
+    #[tokio::test]
+    async fn test_clear_movies() {
+        let pool = setup_test_db().await;
+        
+        seed_movies(&pool).await.unwrap();
+        clear_movies(&pool).await.unwrap();
+        
+        let movies = get_all_movies(&pool).await.unwrap();
+        assert!(movies.is_empty());
+    }
+}
