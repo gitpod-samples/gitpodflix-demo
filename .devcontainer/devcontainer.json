@@ -19,7 +19,8 @@
       "version": "latest",
       "moby": true
     },
-    "ghcr.io/devcontainers-extra/features/renovate-cli:2": {}
+    "ghcr.io/devcontainers-extra/features/renovate-cli:2": {},
+    "ghcr.io/devcontainers-contrib/features/claude-cli:1": {}
   },
   "forwardPorts": [
     3000,
