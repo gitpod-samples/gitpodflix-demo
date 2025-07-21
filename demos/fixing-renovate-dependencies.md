@@ -6,36 +6,34 @@ This demo shows how to use Renovate to create pull requests for dependency updat
 
 - Access to a Gitpod environment with this repository
 - GitHub CLI token configured (`GH_CLI_TOKEN` environment variable)
-- Renovate CLI is pre-installed in the devcontainer
+- Renovate CLI installed (included in the devcontainer)
 
 ## Steps to Replicate
 
 ### 1. Create a Renovate Pull Request
 
-The Renovate CLI is available in this environment and can be used to scan for dependency updates. The repository includes a `renovate.json` configuration that focuses on Jest dependencies.
-
-To create a pull request for dependency updates, you can run:
+Navigate to the catalog service directory and run the renovate Jest command:
 
 ```bash
-# Set the GitHub token for Renovate
-export RENOVATE_TOKEN=$GH_CLI_TOKEN
-
-# Run Renovate to scan and create pull requests
-renovate --platform=github gitpod-samples/gitpodflix-demo
+cd backend/catalog
+npm run renovate:jest
 ```
 
-This will:
-- Use the existing `renovate.json` configuration
-- Scan for dependency updates (currently configured for Jest)
-- Create pull requests for available updates
-- Target upgrades that may introduce breaking changes
+This command will:
+- Use the Jest-specific `renovate-jest-only.json` configuration
+- Create a pull request specifically for Jest dependency updates (if one doesn't already exist)
+- Target Jest upgrades that may introduce breaking changes
+- Only process Jest-related dependencies, ignoring all others
+
+**Note**: If a Jest PR already exists (like PR #57), the command won't create a duplicate. You can use the existing PR for the demo.
 
 ### 2. Review the Pull Request
 
-After the command completes, check the GitHub repository for newly created pull requests. The PRs will contain:
-- Updated dependencies
-- Changelog information about breaking changes
-- Details about what needs to be addressed
+Check the GitHub repository for the Jest pull request (e.g., PR #57 "chore(deps): update dependency jest to v30"). The PR will contain:
+- Updated Jest dependencies from v29 to v30
+- Detailed changelog showing breaking changes, including:
+  - **Removal of deprecated matcher aliases** like `.toBeCalled()`, `.toBeCalledWith()`, etc.
+  - Other breaking changes that may affect your tests
 
 ### 3. Resolve Breaking Changes with AI
 
@@ -53,42 +51,51 @@ gh pr diff <PR_NUMBER>
 #### Option B: Manual Context Gathering
 1. Copy the PR description and diff manually
 2. Include relevant test files that might be affected
-3. Construct a prompt asking for help with dependency migration
+3. Construct a prompt asking for help with Jest migration
 
 #### Option C: Direct File Analysis
 1. Review the failing tests after merging the PR
 2. Copy error messages and affected code
-3. Ask AI to help fix compatibility issues
+3. Ask AI to help fix the deprecated Jest matchers
 
 ## Example AI Prompt
 
 ```
-I have a dependency upgrade that's causing test failures due to breaking changes. Here are the failing tests and error messages:
+I have a Jest upgrade from v29 to v30 that's causing test failures due to deprecated matchers. Here are the failing tests:
 
 [Include test file contents and error messages]
 
-Please help me update the code to be compatible with the new version.
+The breaking change removes these deprecated matcher aliases:
+- .toBeCalled() → should be .toHaveBeenCalled()
+- .toBeCalledWith() → should be .toHaveBeenCalledWith()
+- .toBeCalledTimes() → should be .toHaveBeenCalledTimes()
+- .toReturnWith() → should be .toHaveReturnedWith()
+- .toThrowError() → should be .toThrow()
+
+Please help me update the deprecated Jest matchers to their v30 equivalents.
 ```
 
 ## Renovate Configuration
 
-The repository includes a `renovate.json` file that can be customized to target specific dependencies or change update behavior. You can modify this configuration to:
-- Target different packages
-- Change update frequency
-- Adjust PR creation settings
-- Enable/disable specific dependency types
+The repository includes two renovate configurations:
+- `renovate.json` - General renovate configuration
+- `renovate-jest-only.json` - Jest-specific configuration that:
+  - Only processes Jest and @types/jest packages
+  - Ignores all other dependencies
+  - Always recreates PRs when run
+  - Has no rate limits for demo purposes
 
 ## Expected Outcomes
 
-- Pull requests with dependency updates
+- A pull request with Jest dependency updates
 - Understanding of how to use AI to resolve breaking changes
-- Updated code compatible with new dependency versions
+- Updated test files with Jest v30 compatible syntax
 - Successful test suite execution after fixes
 
 ## Notes for Sales Engineers
 
-- This demonstrates real-world dependency management scenarios
+- This demonstrates the real-world scenario of dependency management
 - Shows how AI can assist with breaking changes during upgrades
 - Highlights the importance of having good test coverage
 - Illustrates the collaborative workflow between automated tools and AI assistance
-- Renovate CLI provides flexibility for different scanning and update strategies
+- The Jest v30 upgrade specifically removes deprecated matchers, making it perfect for demonstrating AI-assisted code migration
