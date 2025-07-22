@@ -21,6 +21,29 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await pool.query('SELECT 1');
+    res.status(200).json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'catalog-service',
+      database: 'connected'
+    });
+  } catch (err) {
+    console.error('Health check failed:', err);
+    res.status(503).json({ 
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      service: 'catalog-service',
+      database: 'disconnected',
+      error: 'Database connection failed'
+    });
+  }
+});
+
 // Routes
 app.get('/api/movies', async (req, res) => {
   try {
