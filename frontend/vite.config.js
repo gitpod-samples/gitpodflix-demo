@@ -11,7 +11,8 @@ export default defineConfig({
       'localhost',
       '127.0.0.1',
       '.sales-emea.flex.doptig.cloud',
-      '.sales-us.flex.doptig.cloud'
+      '.sales-us.flex.doptig.cloud',
+      '.gcp-demo-runner.flex.doptig.cloud'
     ]
   },
   css: {
