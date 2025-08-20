@@ -1,26 +1,26 @@
 {
   "name": "GitpodFlix Dev Environment",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "options": [
+      "--build-arg", "BUILDKIT_INLINE_CACHE=1"
+    ]
+  },
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
-      "installGit": true,
-      "installGitLFS": true,
-      "installGithubCli": true
+      "installGit": false,
+      "installGitLFS": false,
+      "installGithubCli": false
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {  },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "18",
-      "nodeGypDependencies": true
-    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "moby": true
-    },
-    "ghcr.io/devcontainers-extra/features/renovate-cli:2": {},
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+      "version": "20.10",
+      "moby": false
+    }
   },
   "forwardPorts": [
     3000,
@@ -28,26 +28,26 @@
     5432
   ],
   "postCreateCommand": ".devcontainer/setup.sh",
+  "postStartCommand": "./startup.sh",
   "customizations": {
     "vscode": {
       "extensions": [
-        
-        // Install AI code assistants
         "GitHub.copilot",
         "RooVeterinaryInc.roo-cline",
         "saoudrizwan.claude-dev",
-
-        // Install other extensions
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "mtxr.sqltools",
         "mtxr.sqltools-driver-sqlite",
-        "mtxr.sqltools-driver-mysql",
+        "mtxr.sqltools-driver-pg",
         "bradlc.vscode-tailwindcss"
-        
       ],
       "settings": {
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "typescript.preferences.importModuleSpecifier": "relative"
       }
     }
   },
@@ -63,5 +63,11 @@
       "label": "PostgreSQL"
     }
   },
-  "remoteUser": "root"
+  "remoteUser": "node",
+  "mounts": [
+    "source=gitpodflix-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+    "source=gitpodflix-frontend-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume",
+    "source=gitpodflix-catalog-node-modules,target=${containerWorkspaceFolder}/backend/catalog/node_modules,type=volume",
+    "source=gitpodflix-npm-cache,target=/root/.npm,type=volume"
+  ]
 }

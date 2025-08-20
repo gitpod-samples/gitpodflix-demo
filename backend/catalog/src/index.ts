@@ -32,6 +32,232 @@ app.get('/api/movies', async (req, res) => {
   }
 });
 
+// Search endpoint with advanced filtering
+app.get('/api/search', async (req, res) => {
+  try {
+    const { 
+      q, 
+      genres, 
+      yearMin, 
+      yearMax, 
+      ratingMin, 
+      ratingMax, 
+      durationMin, 
+      durationMax,
+      limit = 50,
+      offset = 0
+    } = req.query;
+
+    let query = 'SELECT * FROM movies WHERE 1=1';
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    // Full-text search
+    if (q && typeof q === 'string' && q.trim()) {
+      query += ` AND (
+        to_tsvector('english', title || ' ' || COALESCE(description, '') || ' ' || COALESCE(director, '')) 
+        @@ plainto_tsquery('english', $${paramIndex})
+        OR title ILIKE $${paramIndex + 1}
+        OR description ILIKE $${paramIndex + 1}
+        OR director ILIKE $${paramIndex + 1}
+      )`;
+      params.push(q.trim(), `%${q.trim()}%`);
+      paramIndex += 2;
+    }
+
+    // Genre filtering
+    if (genres && typeof genres === 'string') {
+      const genreList = genres.split(',').map(g => g.trim()).filter(g => g);
+      if (genreList.length > 0) {
+        query += ` AND genres && $${paramIndex}`;
+        params.push(genreList);
+        paramIndex++;
+      }
+    }
+
+    // Year range filtering
+    if (yearMin && !isNaN(Number(yearMin))) {
+      query += ` AND release_year >= $${paramIndex}`;
+      params.push(Number(yearMin));
+      paramIndex++;
+    }
+    if (yearMax && !isNaN(Number(yearMax))) {
+      query += ` AND release_year <= $${paramIndex}`;
+      params.push(Number(yearMax));
+      paramIndex++;
+    }
+
+    // Rating range filtering
+    if (ratingMin && !isNaN(Number(ratingMin))) {
+      query += ` AND rating >= $${paramIndex}`;
+      params.push(Number(ratingMin));
+      paramIndex++;
+    }
+    if (ratingMax && !isNaN(Number(ratingMax))) {
+      query += ` AND rating <= $${paramIndex}`;
+      params.push(Number(ratingMax));
+      paramIndex++;
+    }
+
+    // Duration range filtering
+    if (durationMin && !isNaN(Number(durationMin))) {
+      query += ` AND duration >= $${paramIndex}`;
+      params.push(Number(durationMin));
+      paramIndex++;
+    }
+    if (durationMax && !isNaN(Number(durationMax))) {
+      query += ` AND duration <= $${paramIndex}`;
+      params.push(Number(durationMax));
+      paramIndex++;
+    }
+
+    // Add ordering and pagination
+    query += ` ORDER BY 
+      CASE WHEN $1 IS NOT NULL THEN 
+        ts_rank(to_tsvector('english', title || ' ' || COALESCE(description, '')), plainto_tsquery('english', $1))
+      ELSE 0 END DESC,
+      rating DESC, 
+      release_year DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    
+    params.push(Number(limit), Number(offset));
+
+    const result = await pool.query(query, params);
+    
+    // Get total count for pagination
+    let countQuery = 'SELECT COUNT(*) FROM movies WHERE 1=1';
+    const countParams: any[] = [];
+    let countParamIndex = 1;
+
+    // Apply same filters for count
+    if (q && typeof q === 'string' && q.trim()) {
+      countQuery += ` AND (
+        to_tsvector('english', title || ' ' || COALESCE(description, '') || ' ' || COALESCE(director, '')) 
+        @@ plainto_tsquery('english', $${countParamIndex})
+        OR title ILIKE $${countParamIndex + 1}
+        OR description ILIKE $${countParamIndex + 1}
+        OR director ILIKE $${countParamIndex + 1}
+      )`;
+      countParams.push(q.trim(), `%${q.trim()}%`);
+      countParamIndex += 2;
+    }
+
+    if (genres && typeof genres === 'string') {
+      const genreList = genres.split(',').map(g => g.trim()).filter(g => g);
+      if (genreList.length > 0) {
+        countQuery += ` AND genres && $${countParamIndex}`;
+        countParams.push(genreList);
+        countParamIndex++;
+      }
+    }
+
+    if (yearMin && !isNaN(Number(yearMin))) {
+      countQuery += ` AND release_year >= $${countParamIndex}`;
+      countParams.push(Number(yearMin));
+      countParamIndex++;
+    }
+    if (yearMax && !isNaN(Number(yearMax))) {
+      countQuery += ` AND release_year <= $${countParamIndex}`;
+      countParams.push(Number(yearMax));
+      countParamIndex++;
+    }
+
+    if (ratingMin && !isNaN(Number(ratingMin))) {
+      countQuery += ` AND rating >= $${countParamIndex}`;
+      countParams.push(Number(ratingMin));
+      countParamIndex++;
+    }
+    if (ratingMax && !isNaN(Number(ratingMax))) {
+      countQuery += ` AND rating <= $${countParamIndex}`;
+      countParams.push(Number(ratingMax));
+      countParamIndex++;
+    }
+
+    if (durationMin && !isNaN(Number(durationMin))) {
+      countQuery += ` AND duration >= $${countParamIndex}`;
+      countParams.push(Number(durationMin));
+      countParamIndex++;
+    }
+    if (durationMax && !isNaN(Number(durationMax))) {
+      countQuery += ` AND duration <= $${countParamIndex}`;
+      countParams.push(Number(durationMax));
+      countParamIndex++;
+    }
+
+    const countResult = await pool.query(countQuery, countParams);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    res.json({
+      results: result.rows,
+      pagination: {
+        total: totalCount,
+        limit: Number(limit),
+        offset: Number(offset),
+        hasMore: Number(offset) + Number(limit) < totalCount
+      }
+    });
+  } catch (err) {
+    console.error('Error searching movies:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Search suggestions endpoint
+app.get('/api/suggestions', async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || typeof q !== 'string' || q.trim().length < 2) {
+      return res.json([]);
+    }
+
+    const searchTerm = q.trim();
+    
+    // Get suggestions from titles, directors, and cast
+    const query = `
+      SELECT DISTINCT suggestion, type, COUNT(*) as frequency
+      FROM (
+        SELECT title as suggestion, 'title' as type FROM movies 
+        WHERE title ILIKE $1
+        UNION ALL
+        SELECT director as suggestion, 'director' as type FROM movies 
+        WHERE director ILIKE $1 AND director IS NOT NULL
+        UNION ALL
+        SELECT unnest(cast) as suggestion, 'actor' as type FROM movies 
+        WHERE cast IS NOT NULL AND EXISTS (
+          SELECT 1 FROM unnest(cast) as actor WHERE actor ILIKE $1
+        )
+        UNION ALL
+        SELECT unnest(genres) as suggestion, 'genre' as type FROM movies 
+        WHERE genres IS NOT NULL AND EXISTS (
+          SELECT 1 FROM unnest(genres) as genre WHERE genre ILIKE $1
+        )
+      ) suggestions
+      GROUP BY suggestion, type
+      ORDER BY frequency DESC, suggestion ASC
+      LIMIT 10
+    `;
+
+    const result = await pool.query(query, [`%${searchTerm}%`]);
+    
+    const suggestions = result.rows.map(row => ({
+      text: row.suggestion,
+      type: row.type,
+      frequency: parseInt(row.frequency)
+    }));
+
+    res.json(suggestions);
+  } catch (err) {
+    console.error('Error fetching suggestions:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 app.post('/api/movies/seed', async (req, res) => {
   try {
     // Execute the seed script
