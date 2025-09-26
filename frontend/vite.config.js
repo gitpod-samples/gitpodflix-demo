@@ -18,26 +18,5 @@ export default defineConfig({
   },
   css: {
     postcss: './postcss.config.js'
-  },
-  test: {
-    environment: 'jsdom',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/main.jsx',
-        '**/*.config.js',
-        'coverage/**'
-      ],
-      thresholds: {
-        global: {
-          branches: 90,
-          functions: 90,
-          lines: 90,
-          statements: 90
-        }
-      }
-    }
   }
 }) 

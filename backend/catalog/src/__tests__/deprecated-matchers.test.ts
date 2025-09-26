@@ -1,105 +1,105 @@
-describe('Jest v30 Modern Matchers Demo', () => {
-  describe('Mock function matchers using modern syntax', () => {
-    it('uses toHaveBeenCalled instead of toBeCalled', () => {
+describe('Jest v29 Deprecated Matchers Demo', () => {
+  describe('Mock function matchers that will break in Jest v30', () => {
+    it('uses toBeCalled instead of toHaveBeenCalled', () => {
       const mockFn = jest.fn();
       mockFn('test');
       
-      expect(mockFn).toHaveBeenCalled();
+      expect(mockFn).toBeCalled();
     });
 
-    it('uses toHaveBeenCalledTimes instead of toBeCalledTimes', () => {
+    it('uses toBeCalledTimes instead of toHaveBeenCalledTimes', () => {
       const mockFn = jest.fn();
       mockFn('first');
       mockFn('second');
       
-      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toBeCalledTimes(2);
     });
 
-    it('uses toHaveBeenCalledWith instead of toBeCalledWith', () => {
+    it('uses toBeCalledWith instead of toHaveBeenCalledWith', () => {
       const mockFn = jest.fn();
       mockFn('test-arg');
       
-      expect(mockFn).toHaveBeenCalledWith('test-arg');
+      expect(mockFn).toBeCalledWith('test-arg');
     });
 
-    it('uses toHaveBeenLastCalledWith instead of lastCalledWith', () => {
+    it('uses lastCalledWith instead of toHaveBeenLastCalledWith', () => {
       const mockFn = jest.fn();
       mockFn('first');
       mockFn('last');
       
-      expect(mockFn).toHaveBeenLastCalledWith('last');
+      expect(mockFn).lastCalledWith('last');
     });
 
-    it('uses toHaveBeenNthCalledWith instead of nthCalledWith', () => {
+    it('uses nthCalledWith instead of toHaveBeenNthCalledWith', () => {
       const mockFn = jest.fn();
       mockFn('first');
       mockFn('second');
       
-      expect(mockFn).toHaveBeenNthCalledWith(1, 'first');
-      expect(mockFn).toHaveBeenNthCalledWith(2, 'second');
+      expect(mockFn).nthCalledWith(1, 'first');
+      expect(mockFn).nthCalledWith(2, 'second');
     });
   });
 
-  describe('Return value matchers using modern syntax', () => {
-    it('uses toHaveReturned instead of toReturn', () => {
+  describe('Return value matchers that will break in Jest v30', () => {
+    it('uses toReturn instead of toHaveReturned', () => {
       const mockFn = jest.fn().mockReturnValue('result');
       mockFn();
       
-      expect(mockFn).toHaveReturned();
+      expect(mockFn).toReturn();
     });
 
-    it('uses toHaveReturnedTimes instead of toReturnTimes', () => {
+    it('uses toReturnTimes instead of toHaveReturnedTimes', () => {
       const mockFn = jest.fn().mockReturnValue('result');
       mockFn();
       mockFn();
       
-      expect(mockFn).toHaveReturnedTimes(2);
+      expect(mockFn).toReturnTimes(2);
     });
 
-    it('uses toHaveReturnedWith instead of toReturnWith', () => {
+    it('uses toReturnWith instead of toHaveReturnedWith', () => {
       const mockFn = jest.fn().mockReturnValue('specific-result');
       mockFn();
       
-      expect(mockFn).toHaveReturnedWith('specific-result');
+      expect(mockFn).toReturnWith('specific-result');
     });
 
-    it('uses toHaveLastReturnedWith instead of lastReturnedWith', () => {
+    it('uses lastReturnedWith instead of toHaveLastReturnedWith', () => {
       const mockFn = jest.fn();
       mockFn.mockReturnValueOnce('first');
       mockFn.mockReturnValueOnce('last');
       mockFn();
       mockFn();
       
-      expect(mockFn).toHaveLastReturnedWith('last');
+      expect(mockFn).lastReturnedWith('last');
     });
 
-    it('uses toHaveNthReturnedWith instead of nthReturnedWith', () => {
+    it('uses nthReturnedWith instead of toHaveNthReturnedWith', () => {
       const mockFn = jest.fn();
       mockFn.mockReturnValueOnce('first');
       mockFn.mockReturnValueOnce('second');
       mockFn();
       mockFn();
       
-      expect(mockFn).toHaveNthReturnedWith(1, 'first');
-      expect(mockFn).toHaveNthReturnedWith(2, 'second');
+      expect(mockFn).nthReturnedWith(1, 'first');
+      expect(mockFn).nthReturnedWith(2, 'second');
     });
   });
 
-  describe('Error matchers using modern syntax', () => {
-    it('uses toThrow instead of toThrowError', () => {
+  describe('Error matchers that will break in Jest v30', () => {
+    it('uses toThrowError instead of toThrow', () => {
       const errorFn = () => {
         throw new Error('Test error');
       };
       
-      expect(errorFn).toThrow('Test error');
+      expect(errorFn).toThrowError('Test error');
     });
 
-    it('uses toThrow with no message instead of toThrowError', () => {
+    it('uses toThrowError with no message instead of toThrow', () => {
       const errorFn = () => {
         throw new Error('Any error');
       };
       
-      expect(errorFn).toThrow();
+      expect(errorFn).toThrowError();
     });
   });
 });
