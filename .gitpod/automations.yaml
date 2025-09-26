@@ -1,59 +1,4 @@
 services:
-  jira-mcp:
-    name: "Jira MCP Server"
-    description: "Model Context Protocol server for Jira integration"
-    triggeredBy:
-      - postDevcontainerStart
-      - postEnvironmentStart
-    commands:
-      start: |
-        echo "Setting up Jira MCP server..."
-        
-        # Clone and build Jira MCP if not already present
-        if [ ! -d "/home/node/jira-mcp" ]; then
-          echo "Cloning Jira MCP repository..."
-          cd /home/node
-          git clone https://github.com/MankowskiNick/jira-mcp.git
-          cd jira-mcp
-          echo "Installing dependencies..."
-          npm install
-          echo "Building project..."
-          npm run build
-        else
-          echo "Jira MCP already installed"
-        fi
-        
-        # Test MCP server connection if credentials are available
-        if [ -n "\$JIRA_API_TOKEN" ] && [ "\$JIRA_API_TOKEN" != "your_api_token_here" ]; then
-          echo "Testing MCP server connection..."
-          cd /home/node/jira-mcp
-          
-          # Test server initialization
-          if echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {"roots": {"listChanged": true}}, "clientInfo": {"name": "test-client", "version": "1.0.0"}}}' | timeout 10 node build/index.js >/dev/null 2>&1; then
-            echo "MCP server connection test successful"
-          else
-            echo "MCP server connection test failed - check credentials"
-          fi
-        fi
-
-        echo "Jira MCP server setup complete"
-        echo "Server location: /home/node/jira-mcp/"
-        echo "Configuration: Uses standardized MCP config files (.mcp/config.json, mcp.json, .mcp.yaml)"
-        echo "Project: MBA (coakley.atlassian.net)"
-        echo "Available tools: create-ticket, get-ticket, search-tickets, update-ticket, link-tickets, get-test-steps, add-test-steps"
-
-      ready: |
-        if [ -f "/home/node/jira-mcp/build/index.js" ]; then
-          echo "Jira MCP server is ready"
-          exit 0
-        else
-          echo "Jira MCP server not ready"
-          exit 1
-        fi
-
-      stop: |
-        echo "Jira MCP server stopped (no persistent process)"
-
   postgres:
     name: "PostgreSQL Database"
     description: "PostgreSQL database for Gitpod Flix (Port: 5432)"
@@ -117,6 +62,8 @@ services:
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
+    dependsOn:
+      - postgres
     commands:
       start: |
         cd /workspaces/gitpodflix-demo/backend/catalog
@@ -153,7 +100,9 @@ services:
             break
           fi
           if [ $i -eq 60 ]; then
-            echo "Timeout waiting for PostgreSQL"
+            echo "Timeout waiting for PostgreSQL. Checking service status..."
+            gitpod automations service status postgres || true
+            gitpod automations service logs postgres || true
             exit 1
           fi
           echo "Waiting for PostgreSQL... attempt $i/60"
@@ -182,6 +131,8 @@ services:
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
+    dependsOn:
+      - catalog
     commands:
       start: |
         cd /workspaces/gitpodflix-demo/frontend
@@ -205,7 +156,9 @@ services:
             break
           fi
           if [ $i -eq 60 ]; then
-            echo "Timeout waiting for backend API"
+            echo "Timeout waiting for backend API. Checking service status..."
+            gitpod automations service status catalog || true
+            gitpod automations service logs catalog || true
             exit 1
           fi
           echo "Waiting for backend... attempt $i/60"
@@ -230,112 +183,6 @@ services:
         pkill -f "vite" || true
 
 tasks:
-  setupJiraMCP:
-    name: "Setup Jira MCP"
-    description: "Install and configure Jira MCP server for AI integration"
-    triggeredBy:
-      - manual
-      - postEnvironmentStart
-    command: |
-      echo "Setting up Jira MCP server..."
-
-      # Create config directory
-      mkdir -p ~/.config/gitpod
-      
-      # Clone and build Jira MCP if not already present
-      if [ ! -d "/home/node/jira-mcp" ]; then
-        echo "Cloning Jira MCP repository..."
-        cd /home/node
-        git clone https://github.com/MankowskiNick/jira-mcp.git
-        cd jira-mcp
-        echo "Installing dependencies..."
-        npm install
-        echo "Building project..."
-        npm run build
-      else
-        echo "Jira MCP already installed"
-      fi
-      
-      # Create MCP configuration file
-      echo "Creating MCP configuration..."
-      cat > ~/.config/gitpod/mcp-config.json << EOF
-      {
-        "mcpServers": {
-          "jira-mcp": {
-            "command": "node",
-            "args": ["/home/node/jira-mcp/build/index.js"],
-            "env": {
-              "JIRA_HOST": "\${JIRA_HOST:-coakley.atlassian.net}",
-              "JIRA_USERNAME": "\${JIRA_USERNAME:-joe@gitpod.io}",
-              "JIRA_API_TOKEN": "\${JIRA_API_TOKEN:-your_api_token_here}",
-              "JIRA_PROJECT_KEY": "\${JIRA_PROJECT_KEY:-MBA}",
-              "AUTO_CREATE_TEST_TICKETS": "true",
-              "JIRA_ACCEPTANCE_CRITERIA_FIELD": "customfield_10429",
-              "JIRA_STORY_POINTS_FIELD": "customfield_10040",
-              "JIRA_EPIC_LINK_FIELD": "customfield_10014"
-            }
-          }
-        }
-      }
-      EOF
-      
-      # Configure generic MCP client connection
-      echo "Configuring MCP client connection..."
-      
-      # Create generic MCP client config
-      MCP_CLIENT_CONFIG="$HOME/.config/mcp/client-config.json"
-      mkdir -p "$HOME/.config/mcp"
-      cat > "$MCP_CLIENT_CONFIG" << EOF
-      {
-        "mcpServers": {
-          "jira-mcp": {
-            "command": "node",
-            "args": ["/home/node/jira-mcp/build/index.js"],
-            "env": {
-              "JIRA_HOST": "\${JIRA_HOST:-coakley.atlassian.net}",
-              "JIRA_USERNAME": "\${JIRA_USERNAME:-joe@gitpod.io}",
-              "JIRA_API_TOKEN": "\${JIRA_API_TOKEN:-your_api_token_here}",
-              "JIRA_PROJECT_KEY": "\${JIRA_PROJECT_KEY:-MBA}",
-              "AUTO_CREATE_TEST_TICKETS": "true",
-              "JIRA_ACCEPTANCE_CRITERIA_FIELD": "customfield_10429",
-              "JIRA_STORY_POINTS_FIELD": "customfield_10040",
-              "JIRA_EPIC_LINK_FIELD": "customfield_10014"
-            }
-          }
-        }
-      }
-      EOF
-
-      # Test the MCP server if credentials are available
-      if [ -n "\$JIRA_API_TOKEN" ] && [ "\$JIRA_API_TOKEN" != "your_api_token_here" ]; then
-        echo "Testing MCP server connection..."
-        cd /home/node/jira-mcp
-
-        # Test server initialization
-        if echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {"roots": {"listChanged": true}}, "clientInfo": {"name": "test-client", "version": "1.0.0"}}}' | timeout 10 node build/index.js >/dev/null 2>&1; then
-          echo "MCP server connection test successful"
-        else
-          echo "MCP server connection test failed - check credentials"
-        fi
-      fi
-      
-      # Create a simple verification script
-      echo '#!/bin/bash' > /tmp/verify-mcp-connection.sh
-      echo 'echo "Verifying MCP configuration..."' >> /tmp/verify-mcp-connection.sh
-      echo 'echo "Server config: $([ -f ~/.config/gitpod/mcp-config.json ] && echo \"Found\" || echo \"Missing\")"' >> /tmp/verify-mcp-connection.sh
-      echo 'echo "Generic client config: $([ -f ~/.config/mcp/client-config.json ] && echo \"Found\" || echo \"Missing\")"' >> /tmp/verify-mcp-connection.sh
-      echo 'echo "MCP server binary: $([ -f /home/node/jira-mcp/build/index.js ] && echo \"Found\" || echo \"Missing\")"' >> /tmp/verify-mcp-connection.sh
-      chmod +x /tmp/verify-mcp-connection.sh
-
-      echo "Jira MCP server and client setup complete"
-      echo "Server config: ~/.config/gitpod/mcp-config.json"
-      echo "Generic client config: ~/.config/mcp/client-config.json"
-      echo "Server location: /home/node/jira-mcp/"
-      echo "Project: MBA (coakley.atlassian.net)"
-      echo "Available tools: create-ticket, get-ticket, search-tickets, update-ticket, link-tickets, get-test-steps, add-test-steps"
-      echo ""
-      echo "Run '/tmp/verify-mcp-connection.sh' to verify the setup"
-      echo "AI assistants may need to restart to pick up the new MCP configuration"
 
   seedDatabase:
     name: "Seed Database"
@@ -343,6 +190,8 @@ tasks:
     triggeredBy:
       - manual
       - postEnvironmentStart
+    dependsOn:
+      - postgres
     command: |
       cd /workspaces/gitpodflix-demo/database/main
 
@@ -354,7 +203,9 @@ tasks:
           break
         fi
         if [ $i -eq 30 ]; then
-          echo "Timeout waiting for PostgreSQL"
+          echo "Timeout waiting for PostgreSQL. Checking service status..."
+          gitpod automations service status postgres || true
+          gitpod automations service logs postgres || true
           exit 1
         fi
         echo "Waiting for PostgreSQL... attempt $i/30"
@@ -391,11 +242,96 @@ tasks:
     triggeredBy:
       - postEnvironmentStart
       - manual
+    dependsOn:
+      - gitpod-flix
     command: |
+      # Wait for services to be ready before opening ports
+      echo "Waiting for services to be ready before opening ports..."
+      
+      # Wait for frontend to be ready
+      for i in {1..30}; do
+        if gitpod automations service status gitpod-flix | grep -q "ready"; then
+          echo "Frontend service is ready"
+          break
+        fi
+        if [ $i -eq 30 ]; then
+          echo "Warning: Frontend service not ready, opening ports anyway"
+          break
+        fi
+        echo "Waiting for frontend service... attempt $i/30"
+        sleep 2
+      done
+      
       echo "Opening demo ports..."
       gitpod environment port open 3000 --name "Gitpod Flix"
       gitpod environment port open 3001 --name "Catalog Service"
       echo "Demo ports opened successfully!"
+
+  checkSystemStatus:
+    name: "Check System Status"
+    description: "Check the status of all services and provide troubleshooting info"
+    triggeredBy:
+      - manual
+    command: |
+      echo "=== GitpodFlix System Status Check ==="
+      echo ""
+      
+      echo "1. Service Status:"
+      echo "  PostgreSQL Database:"
+      gitpod automations service status postgres || echo "    ❌ Not running"
+      echo "  Catalog Service:"
+      gitpod automations service status catalog || echo "    ❌ Not running"
+      echo "  Frontend Service:"
+      gitpod automations service status gitpod-flix || echo "    ❌ Not running"
+      echo ""
+      
+      echo "2. Port Status:"
+      echo "  Port 5432 (PostgreSQL):"
+      if lsof -Pi :5432 -sTCP:LISTEN > /dev/null 2>&1; then
+        echo "    ✅ Active"
+      else
+        echo "    ❌ Not listening"
+      fi
+      echo "  Port 3001 (Catalog API):"
+      if lsof -Pi :3001 -sTCP:LISTEN > /dev/null 2>&1; then
+        echo "    ✅ Active"
+      else
+        echo "    ❌ Not listening"
+      fi
+      echo "  Port 3000 (Frontend):"
+      if lsof -Pi :3000 -sTCP:LISTEN > /dev/null 2>&1; then
+        echo "    ✅ Active"
+      else
+        echo "    ❌ Not listening"
+      fi
+      echo ""
+      
+      echo "3. Health Checks:"
+      echo "  Database Connection:"
+      if PGPASSWORD=gitpod psql -h localhost -U gitpod -d gitpodflix -c "SELECT 1" > /dev/null 2>&1; then
+        echo "    ✅ Connected"
+      else
+        echo "    ❌ Cannot connect"
+      fi
+      echo "  Catalog API Health:"
+      if curl -s http://localhost:3001/health > /dev/null 2>&1; then
+        echo "    ✅ Healthy"
+      else
+        echo "    ❌ Not responding"
+      fi
+      echo "  Frontend Health:"
+      if curl -s http://localhost:3000 > /dev/null 2>&1; then
+        echo "    ✅ Healthy"
+      else
+        echo "    ❌ Not responding"
+      fi
+      echo ""
+      
+      echo "4. Troubleshooting Commands:"
+      echo "  Restart all services: gitpod automations service restart postgres catalog gitpod-flix"
+      echo "  View service logs: gitpod automations service logs <service-name>"
+      echo "  Seed database: gitpod automations task start seedDatabase"
+      echo "  Open ports: gitpod automations task start openDemoPorts"
 
   RMRF:
     name: "rm -rf demo"
