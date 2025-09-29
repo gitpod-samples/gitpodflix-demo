@@ -62,8 +62,6 @@ services:
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
-    dependsOn:
-      - postgres
     commands:
       start: |
         cd /workspaces/gitpodflix-demo/backend/catalog
@@ -131,8 +129,6 @@ services:
     triggeredBy:
       - postDevcontainerStart
       - postEnvironmentStart
-    dependsOn:
-      - catalog
     commands:
       start: |
         cd /workspaces/gitpodflix-demo/frontend
@@ -190,8 +186,6 @@ tasks:
     triggeredBy:
       - manual
       - postEnvironmentStart
-    dependsOn:
-      - postgres
     command: |
       cd /workspaces/gitpodflix-demo/database/main
 
@@ -242,8 +236,6 @@ tasks:
     triggeredBy:
       - postEnvironmentStart
       - manual
-    dependsOn:
-      - gitpod-flix
     command: |
       # Wait for services to be ready before opening ports
       echo "Waiting for services to be ready before opening ports..."
