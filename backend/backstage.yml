@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backend
+  description: Backend services for Gitpod Flix streaming platform
+  tags:
+    - backend
+    - services
+  annotations:
+    github.com/project-slug: gitpod-samples/gitpodflix-demo
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: gitpodflix
+  subcomponentOf: gitpodflix
