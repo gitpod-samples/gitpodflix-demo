@@ -1,0 +1,28 @@
+mcpServers:
+  jira-mcp:
+    command: node
+    args:
+      - /home/node/jira-mcp/build/index.js
+    env:
+      JIRA_HOST: ${JIRA_HOST:-coakley.atlassian.net}
+      JIRA_USERNAME: ${JIRA_USERNAME:-joe@gitpod.io}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-your_api_token_here}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-MBA}
+      AUTO_CREATE_TEST_TICKETS: "true"
+      JIRA_ACCEPTANCE_CRITERIA_FIELD: customfield_10429
+      JIRA_STORY_POINTS_FIELD: customfield_10040
+      JIRA_EPIC_LINK_FIELD: customfield_10014
+
+tools:
+  - create-ticket
+  - get-ticket
+  - search-tickets
+  - update-ticket
+  - link-tickets
+  - get-test-steps
+  - add-test-steps
+
+server_location: /home/node/jira-mcp/
+project:
+  key: MBA
+  host: coakley.atlassian.net
