@@ -36,5 +36,8 @@
     ],
     "ext": "ts,json",
     "exec": "ts-node src/index.ts"
+  },
+  "overrides": {
+    "qs": "^6.14.1"
   }
 }
